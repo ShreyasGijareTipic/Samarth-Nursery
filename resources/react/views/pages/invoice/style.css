@@ -1,0 +1,34 @@
+.invoice-content {
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+}
+
+@media (max-width: 768px) {
+  .invoice-content {
+    font-size: 10px;
+  }
+  .table {
+    font-size: 10px;
+  }
+}
+
+@media print {
+  @page {
+    size: A4; 
+    margin: 1cm;
+    margin-top: 5rem;
+  }
+
+  .nav, .footer, .header {
+    display: none;
+  }
+
+  .no-print {
+    display: none;
+  }
+
+  /* Add these rules to remove the header and timestamp */
+  header, .header, .timestamp, .time-stamp {
+    display: none;
+  }
+}
