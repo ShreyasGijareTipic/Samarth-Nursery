@@ -56,6 +56,8 @@ Route::group(['middleware'=>['auth:sanctum']], function(){
     Route::get('/monthlyReport', [OrderController::class, 'getMonthlyReport']);
     Route::get('/customerReport', [OrderController::class, 'customerReport'])->name('customerReport');
     Route::resource('company', CompanyInfoController::class);
+    Route::put('/orders/{id}/updateReturnMoney', [OrderController::class, 'updateReturnMoney']);
+
 });
 
 

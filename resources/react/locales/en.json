@@ -26,6 +26,7 @@
      "clear": "Clear",
      "view_QR": "View QR",
      "search": "Search by name",
+     "update_return" : "Return",
 
      "dashboard": "Dashboard",
      "delivery": "Delivery",
@@ -140,6 +141,10 @@
     },
     
         "invoice": {
+        "name": "Name",
+        "address": "Address",
+        "credit": "Credit",
+          "rs": "Rs",
           "customer_name": "Customer Name",
           "new_customer": "New Customer",
           "invoice_type": "Invoice Type",
@@ -147,14 +152,14 @@
           "delivery_date": "Delivery Date",
           "product": "Product",
           "price": "Price",
-          "quantity": "Quantity",
+          "quantity": "Qty.",
           "total": "Total",
-          "action": "Action",
+          "action": "Act.",
           "payment_type": "Payment Type",
           "discount": "Discount",
           "paid_amount": "Paid Amount",
           "balance_amount": "Balance Amount",
-          "final_amount": "Final Amount",
+          "final_amount": "Biiled Amount",
           "submit": "Submit",
           "clear": "Clear",
           "view_qr": "View QR",
@@ -163,6 +168,6 @@
           "pune": "Pune",
           "online": "Online/UPI",
           "cash": "cash",
-          "new_invoice" : "new_invoice"
+          "new_invoice" : "New invoice"
         }
     }   

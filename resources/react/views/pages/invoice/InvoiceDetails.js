@@ -1,7 +1,8 @@
 import './style.css';
 import { CButton, CCard, CCardBody, CCardHeader, CContainer } from '@coreui/react';
 import React, { useState, useEffect } from 'react';
-import { generatePDF } from './InvoicePdf';
+import { generatePDF as generateMarathiPDF } from './InvoicePdf';
+import { generatePDF as generateEnglishPDF } from './InvoicePdfEnglish';
 import { getAPICall } from '../../../util/api';
 import { useParams } from 'react-router-dom';
 import { getUserData } from '../../../util/session';
@@ -71,9 +72,8 @@ const InvoiceDetails = () => {
     try {
       const response = await getAPICall('/api/order/' + param.id);
 
-      // Fix: Update to use paymentType instead of paymentMode
       let paymentModeString = response.paymentType === 0 ? 'Cash' : 'Online (UPI/Bank Transfer)';
-      
+
       let orderStatusString = '';
       switch (response.orderStatus) {
         case 0:
@@ -122,9 +122,30 @@ const InvoiceDetails = () => {
     fetchOrder();
   }, [param.id]);
 
-  const handleDownload = () => {
+  const handleDownload = (language) => {
     const invoiceNo = formData.InvoiceNumber;
-    generatePDF(grandTotal, invoiceNo, formData.customer.name, formData, remainingAmount, totalAmountWords);
+    const isMarathi = language === 'marathi';
+
+    if (isMarathi) {
+      generateMarathiPDF(
+        grandTotal,
+        invoiceNo,
+        formData.customer.name,
+        formData,
+        remainingAmount,
+        totalAmountWords,
+        isMarathi
+      );
+    } else {
+      generateEnglishPDF(
+        grandTotal,
+        invoiceNo,
+        formData.customer.name,
+        formData,
+        remainingAmount,
+        totalAmountWords
+      );
+    }
   };
 
   let invoiceName;
@@ -274,7 +295,8 @@ const InvoiceDetails = () => {
 
           <div className='d-flex justify-content-center'>
             <CButton color="primary" variant="outline" onClick={handlePrint} className='d-print-none me-2'>Print</CButton>
-            <CButton color="success" variant="outline" onClick={handleDownload} className='d-print-none '>Download</CButton>
+            <CButton color="success" variant="outline" onClick={() => handleDownload('marathi')} className='d-print-none me-2'>Download (Marathi)</CButton>
+            <CButton color="success" variant="outline" onClick={() => handleDownload('english')} className='d-print-none'>Download (English)</CButton>
           </div>
         </CContainer>
       </CCardBody>

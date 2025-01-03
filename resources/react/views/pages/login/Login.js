@@ -78,7 +78,7 @@ const Login = () => {
           if(user){
             storeUserData(resp);
             if(user.type > 1){
-              navigate('/dashboard');
+              navigate('/invoice');
             }else{
               navigate('/dashboard');
             }

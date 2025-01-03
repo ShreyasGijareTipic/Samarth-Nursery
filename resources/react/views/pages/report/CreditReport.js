@@ -18,7 +18,7 @@ import {
   CTableHeaderCell,
   CTableRow,
 } from '@coreui/react'
-import { getAPICall } from '../../../util/api'
+import { getAPICall, put } from '../../../util/api'; // Ensure put API function is available
 import { useToast } from '../../common/toast/ToastContext';
 import CIcon from '@coreui/icons-react';
 import { cilChatBubble, cilPhone } from '@coreui/icons';
@@ -32,6 +32,7 @@ const CreditReport = () => {
   const [report, setReport] = useState([]);
   const [filteredReport, setFilteredReport] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [returnMoney, setReturnMoney] = useState({});  // State to manage return money inputs
   const { showToast } = useToast();
   const company = getUserData()?.company_info?.company_name;
   const { t, i18n } = useTranslation("global");
@@ -53,10 +54,6 @@ const CreditReport = () => {
     fetchReport();
   }, []);
 
-  // if(searchTerm?.length > 0){
-  //   filteredReport = report.filter(r => r.name.toLowerCase().includes(searchTerm.toLowerCase()));
-  // }
-
   function onSearchChange(searchTerm) {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
@@ -66,8 +63,39 @@ const CreditReport = () => {
       }else{
         setFilteredReport(report);
       }
-      }, debounceDelay);
+    }, debounceDelay);
   }
+
+  const handleReturnMoneyChange = (e, mobile) => {
+    const { value } = e.target;
+    setReturnMoney(prevState => ({
+      ...prevState,
+      [mobile]: value,
+    }));
+  };
+
+  const handleReturnMoneySubmit = async (mobile) => {
+    const returnAmount = parseFloat(returnMoney[mobile] || 0);
+    if (isNaN(returnAmount) || returnAmount <= 0) {
+      showToast('warning', 'Invalid return amount');
+      return;
+    }
+
+    try {
+      // Make API call to update the return money in the database (use the appropriate endpoint here)
+      const updatedData = await put(`/api/updateReturnMoney/${mobile}`, { returnAmount });
+
+      // On successful update, refresh the report data
+      if (updatedData) {
+        showToast('success', 'Return money updated successfully');
+        const reportData = await getAPICall('/api/creditReport');
+        setReport(reportData);
+        setFilteredReport(reportData);
+      }
+    } catch (error) {
+      showToast('danger', 'Error occurred ' + error);
+    }
+  };
 
   let grandTotal = 0;
 
@@ -121,6 +149,22 @@ const CreditReport = () => {
                             }
                             </tbody>
                           </table>
+                          {/* Input field and button for return money */}
+                          <CFormInput 
+                            type="number" 
+                            min="0" 
+                            step="0.01" 
+                            placeholder="Enter return money" 
+                            value={returnMoney[p.mobile] || ''}
+                            onChange={(e) => handleReturnMoneyChange(e, p.mobile)} 
+                          />
+                          <CButton 
+                            size="sm" 
+                            color="warning" 
+                            onClick={() => handleReturnMoneySubmit(p.mobile)}
+                          >
+                            {t('LABELS.update_return')}
+                          </CButton>
                         </CTableDataCell>
                         <CTableDataCell>
                           <a className='btn btn-outline-primary btn-sm' href={"tel:" + p.mobile}>
@@ -152,4 +196,4 @@ const CreditReport = () => {
   )
 }
 
-export default CreditReport
+export default CreditReport;

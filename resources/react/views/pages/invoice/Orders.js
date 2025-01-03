@@ -16,7 +16,7 @@ import ConfirmationModal from '../../common/ConfirmationModal';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../common/toast/ToastContext';
 import CIcon from '@coreui/icons-react';
-import { cilPhone } from '@coreui/icons';
+import { cilPhone, cilChatBubble } from '@coreui/icons';
 import { useTranslation } from 'react-i18next';
 
 import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
@@ -39,7 +39,6 @@ const myTheme = themeQuartz
         chromeBackgroundColor: {
             ref: "backgroundColor"
         },
-        columnBorder: false,
         fontFamily: {
             googleFont: "Inter"
         },
@@ -56,7 +55,7 @@ const myTheme = themeQuartz
         wrapperBorder: false,
         wrapperBorderRadius: 2
     });
-const useSlimMode = false;
+
 const Orders = () => {
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -87,9 +86,7 @@ const Orders = () => {
       const orderStatus = type == 2 ? 2 : undefined;
       const response = await getAPICall(`/api/order?invoiceType=${type}&orderStatus=${orderStatus}&page=${pagination.pageIndex+1}`);
       setOrders(response?.data ?? []);
-      //setCurrentPage(response.current_page);
       setRowCount(response.total);
-      //setTotalPage(response.total);
     } catch (error) {
       showToast('danger', 'Error occured ' + error);
     }
@@ -122,41 +119,63 @@ const Orders = () => {
   };
 
   const formatDate = (dateString) => {
-      const options = { day: 'numeric', month: 'short', year: 'numeric' };
-      const date = new Date(dateString);
-      const formattedDate = date.toLocaleDateString('en-US', options).replace(',', '');
-      
-      // Split the formatted date to rearrange it
-      const [month, day] = formattedDate.split(' ');
-      return `${day} ${month}`;
+    const options = { day: 'numeric', month: 'short', year: 'numeric' };
+    const date = new Date(dateString);
+    const formattedDate = date.toLocaleDateString('en-US', options).replace(',', '');
+    
+    const [month, day] = formattedDate.split(' ');
+    return `${day} ${month}`;
   };
 
   function convertTo12HourFormat(time) {
-      // Split the time into hours and minutes
-      let [hours, minutes] = time.split(':').map(Number);
-      
-      // Determine AM or PM suffix
-      const suffix = hours >= 12 ? 'PM' : 'AM';
-      
-      // Convert hours from 24-hour format to 12-hour format
-      hours = hours % 12 || 12; // Convert 0 to 12 for midnight
+    let [hours, minutes] = time.split(':').map(Number);
+    const suffix = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    return `${hours}:${minutes.toString().padStart(2, '0')} ${suffix}`;
+  };
 
-      // Return the formatted time
-      return `${hours}:${minutes.toString().padStart(2, '0')} ${suffix}`;
+  const handleDelivered = async (orderId) => {
+    try {
+      // Call API to update order status to delivered
+      await put(`/api/order/${orderId}`, { orderStatus: 1 });
+
+      // After successfully updating, show success message and refetch orders
+      showToast('success', 'Order marked as delivered');
+      fetchOrders();
+    } catch (error) {
+      showToast('danger', 'Error occured ' + error);
+    }
   };
 
   const columns = [
-    // { accessorKey: 'index', header: 'Sr.No.' },
     { accessorKey: 'customer.name', header: 'Name.' },
     { accessorKey: 'customer.mobile', header: 'Call',
       Cell: ({ cell }) => (
-        <a href={"tel:"+cell.row.original.customer?.mobile}>
-          Call <CIcon icon={cilPhone} />
-        </a>
-      ),
+        <div>
+          <a 
+            className="btn btn-outline-info btn-sm"
+            href={"tel:" + cell.row.original.customer?.mobile}>
+            <CIcon icon={cilPhone} />
+          </a>
+          &nbsp;&nbsp;
+          <a
+            className="btn btn-outline-success btn-sm"
+            href={`sms:+${cell.row.original.customer?.mobile}?body=Hello, There is an outstanding payment of Rs. ${
+              cell.row.original.totalPayment < 0
+                ? -1 * cell.row.original.totalPayment
+                : 0
+            }. Kindly pay it. From - Samarth Nursery`}
+          >
+            <CIcon icon={cilChatBubble} />
+          </a>
+        </div>
+      )
     },
     { accessorKey: 'invoiceDate', header: 'Delivery Date',
+      sortType: "datetime",  // Adding sort functionality for date
       Cell: ({ cell }) => formatDate(cell.row.original.invoiceDate) + "\n ("+convertTo12HourFormat(cell.row.original.deliveryTime)+")",
+      // Enable sorting on this column
+      sortable: true, // This will allow sorting both ascending and descending
     },
     {
       accessorKey: 'items',
@@ -168,15 +187,22 @@ const Orders = () => {
             cell.row.original.items.map(i=>(<tr key={i.id}>
               <td>{i.product_name}</td>
               <td>{i.dQty +' X '+i.dPrice + '₹' }</td>
-              {/* <td>{'₹ ' + i.total_price}</td> */}
             </tr>))
           }
           </tbody>
         </table> : 'Only cash collected'
       ),
     },
-    { accessorKey: 'balance', header: 'Balance' },
-    { accessorKey: 'paidAmount', header: 'Paid' },
+    { accessorKey: 'balance', header: 'Balance', 
+      Cell: ({ cell }) => (
+        <span>{parseFloat(cell.row.original.balance).toFixed(2)}</span> // Format balance value
+      ),
+    },
+    { accessorKey: 'paidAmount', header: 'Paid', 
+      Cell: ({ cell }) => (
+        <span>{parseFloat(cell.row.original.paidAmount).toFixed(2)}</span> // Format paid amount value
+      ),
+    },
     { accessorKey: 'finalAmount', header: 'Total' },
     {
       accessorKey: 'orderStatus',
@@ -216,58 +242,11 @@ const Orders = () => {
   const data = orders.map((order, index) => ({
     ...order,
     index: index + 1,
-    balance: order.finalAmount - order.paidAmount,
+    balance: (order.finalAmount - order.paidAmount).toFixed(2), // Round balance to 2 decimal places
+    paidAmount: order.paidAmount.toFixed(2), // Round paid amount to 2 decimal places
   }));
 
-  const colDefs = [
-      { field: "customer.name", headerName: "Name", width: 150, filter: true },
-      { field: "customer.mobile", headerName: "Mobile", width: 120 },
-      { field: "invoiceDate", headerName: "Delivery Date", width: 150, 
-        valueGetter: (params) => formatDate(params.data.invoiceDate) + "\n (" + convertTo12HourFormat(params.data.deliveryTime) + ")" 
-      },
-      { field: "items", headerName: "Items", width: 200, 
-        cellRenderer: CustomCellRenderer, // Use the custom cell renderer
-        valueGetter: (params) => {
-          if (params.data.items.length > 0) {
-            return `
-              <table class="table table-sm borderless">
-                <tbody>
-                  ${params.data.items.map(i => `<tr><td>${i.product_name}</td><td>${i.dQty} X ${i.dPrice}₹</td></tr>`).join('')}
-                </tbody>
-              </table>`;
-          } else {
-            return 'Only cash collected';
-          }
-        }
-      },
-      { field: "balance", headerName: "Balance", width: 80 },
-      { field: "paidAmount", headerName: "Paid", width: 80 },
-      { field: "finalAmount", headerName: "Total", width: 100 },
-      { field: "orderStatus", headerName: "Status", width: 100, 
-        cellRenderer: CustomCellRenderer, // Use the custom cell renderer
-        valueGetter: (params) => {
-          const status = params.data.orderStatus;
-          const badgeColor = status === 0 ? 'red' : status === 1 ? 'green' : 'orange';
-          const statusText = status === 0 ? 'Canceled' : status === 1 ? 'Delivered' : 'Pending';
-          return `<span style="color:${badgeColor}">${statusText}</span>`;
-        }
-      },
-      // { field: "actions", headerName: "Actions", width: 150, 
-      //   cellRenderer: CustomCellRenderer, // Use the custom cell renderer
-      //   valueGetter: (params) => {
-      //     return `
-      //       <div>
-      //         <CBadge role="button" color="success" onClick="handleShow(${params.data.id})">Show</CBadge>
-      //         ${params.data.orderStatus !== 0 ? 
-      //           `<CBadge role="button" color="danger" onClick="handleDelete(${params.data.id})">Cancel</CBadge>` : ''}
-      //       </div>
-      //     `;
-      //   }
-      // },
-    ];
-
-  const getView = ()=>{
-    
+  const getView = ()=> {
     if(route === 'bookings'){
       return (
         <>
@@ -277,39 +256,37 @@ const Orders = () => {
               <CTableRow>
                 <CTableHeaderCell scope="col" className="d-none d-sm-table-cell">{t("LABELS.id")}</CTableHeaderCell>
                 <CTableHeaderCell scope="col">{t("LABELS.name")}</CTableHeaderCell>
-                {/* <CTableHeaderCell scope="col">Call</CTableHeaderCell> */}
                 <CTableHeaderCell scope="col">{t("LABELS.date")}</CTableHeaderCell>
                 <CTableHeaderCell scope="col">{t("LABELS.products")}</CTableHeaderCell>
                 <CTableHeaderCell scope="col">{t("LABELS.actions")}</CTableHeaderCell>
               </CTableRow>
             </CTableHead>
             <CTableBody>
-              {data.map((o, index)=>(
-              <CTableRow key={o.id}>
-                <CTableDataCell className="d-none d-sm-table-cell" scope="row">{index + 1}</CTableDataCell>
-                <CTableDataCell><a href={"tel:"+o.customer?.mobile}><CIcon icon={cilPhone}/></a>{o.customer.name}</CTableDataCell>
-                {/* <CTableDataCell>
-                  <a href={"tel:"+o.customer?.mobile}><CIcon icon={cilPhone}/></a> </CTableDataCell> */}
-                <CTableDataCell>{formatDate(o.invoiceDate) + "\n ("+convertTo12HourFormat(o.deliveryTime)+")"}</CTableDataCell>
-                <CTableDataCell>
-                    <table style={{margin:0}} className="table table-sm borderless">
-                      <tbody>
-                        {/* <tr>
-                          <td><strong>Product</strong></td>
-                          <td><b>Details</b></td>
-                        </tr> */}
-                      {
-                        o.items.map(i=>(<tr key={i.id}>
-                          <td>{lng === 'en' ? i.product_name : i.product_local_name}</td>
-                          <td>{i.dQty }</td>
-                          {/* <td>{'₹ ' + i.total_price}</td> */}
-                        </tr>))
-                      }
-                      </tbody> 
-                    </table>
-                </CTableDataCell>
-                <CTableDataCell>
+              {data.map((o, index)=>( 
+                <CTableRow key={o.id}>
+                  <CTableDataCell className="d-none d-sm-table-cell" scope="row">{index + 1}</CTableDataCell>
+                  <CTableDataCell>
+                    <a href={"tel:"+o.customer?.mobile}><CIcon icon={cilPhone}/></a>{o.customer.name}
+                  </CTableDataCell>
+                  <CTableDataCell>{formatDate(o.invoiceDate) + "\n ("+convertTo12HourFormat(o.deliveryTime)+")"}</CTableDataCell>
+                  <CTableDataCell>
+                    {o.items.map((i) => (
+                      <div key={i.id}>
+                        {lng === 'en' ? i.product_name : i.product_local_name} ({i.dQty})
+                      </div>
+                    ))}
+                  </CTableDataCell>
+                  <CTableDataCell>
                   {o.orderStatus !== 0 && (
+                    <>
+                      <CBadge
+                        role="button"
+                        color="success"
+                        onClick={() => handleDelivered(o.id)} // Call handleDelivered function
+                        className="mr-4" // Adds space between buttons
+                      >
+                        {t("LABELS.delivery")}
+                      </CBadge>
                       <CBadge
                         role="button"
                         color="danger"
@@ -317,56 +294,45 @@ const Orders = () => {
                       >
                         {t("LABELS.cancel")}
                       </CBadge>
-                    )}
+                    </>
+                  )}
                 </CTableDataCell>
-              </CTableRow>))}
-          </CTableBody>
+                </CTableRow>
+              ))}
+            </CTableBody>
           </CTable>
         </>
-      )
-    }
-
-    if(useSlimMode){
-      return (
-        <div 
-        className="ag-theme-alpine"
-        theme={myTheme} 
-        style={{ width: "100%", height: "calc(100vh - 165px)" }}>
-          <h2 className='text-center'>{t("LABELS.all_orders")}</h2>
-          <AgGridReact
-            defaultColDef={{ resizable: true }} // Allow column resizing
-            //domLayout='autoHeight' // Adjust height based on content
-            rowData={data}
-            columnDefs={colDefs}
-          />
-        </div>
       );
     }
-    return (<CCol xs={12}>
-      <h2 className='text-center'>{t("LABELS.all_orders")}</h2>
-      <MantineReactTable 
-        defaultColumn={{
-          maxSize: 400,
-          minSize: 80,
-          size: 100, //default size is usually 180
-        }}
-        enableStickyHeader={true}
-        enableStickyFooter={true}
-        enableDensityToggle={false}
-        manualPagination  
-        onPaginationChange={setPagination}
-        rowCount={rowCount}
-        paginationDisplayMode={'pages'}
-        initialState={{density: 'xs'}}
-        columns={columns} 
-        data={data}
-        state={{
-          isLoading,
-          pagination,
-          showProgressBars: isRefetching,
-        }}
-        enableFullScreenToggle={false}/>
-    </CCol>);
+
+    return (
+      <CCol xs={12}>
+        <h2 className='text-center'>{t("LABELS.all_orders")}</h2>
+        <MantineReactTable 
+          defaultColumn={{
+            maxSize: 400,
+            minSize: 80,
+            size: 100,
+          }}
+          enableStickyHeader={true}
+          enableStickyFooter={true}
+          enableDensityToggle={false}
+          manualPagination  
+          onPaginationChange={setPagination}
+          rowCount={rowCount}
+          paginationDisplayMode={'pages'}
+          initialState={{density: 'xs'}}
+          columns={columns} 
+          data={data}
+          state={{
+            isLoading,
+            pagination,
+            showProgressBars: isRefetching,
+          }}
+          enableFullScreenToggle={false}
+        />
+      </CCol>
+    );
   }
 
   return (

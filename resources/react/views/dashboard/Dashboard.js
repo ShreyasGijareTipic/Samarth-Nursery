@@ -73,10 +73,10 @@ const Dashboard = (Props) => {
                 <CTableHead>
                   <CTableRow>
                     <CTableHeaderCell scope="col">{t('LABELS.product')}</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">{t('LABELS.total')}</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">{t('LABELS.stock')}</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">{t('LABELS.given')}</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">{t('LABELS.booked')}</CTableHeaderCell>
+                    <CTableHeaderCell scope="col" className="text-center">{t('LABELS.total')}</CTableHeaderCell>
+                    <CTableHeaderCell scope="col" className="text-center">{t('LABELS.stock')}</CTableHeaderCell>
+                    <CTableHeaderCell scope="col" className="text-center">{t('LABELS.given')}</CTableHeaderCell>
+                    <CTableHeaderCell scope="col" className="text-center">{t('LABELS.booked')}</CTableHeaderCell>
                   </CTableRow>
                 </CTableHead>
                 <CTableBody>

@@ -404,4 +404,62 @@ class OrderController extends Controller
         return response()->json($result);
     }
 
+    /**
+ * Update the return money for a specific order.
+ *
+ * @param  \Illuminate\Http\Request  $request
+ * @param  int  $id
+ * @return \Illuminate\Http\Response
+ */
+public function updateReturnMoney(Request $request, $id)
+{
+    $user = Auth::user();
+    
+    // Validate return amount
+    $request->validate([
+        'returnAmount' => 'required|numeric|min:0', // Ensure it's a positive number
+    ]);
+
+    // Find the order
+    $order = Order::find($id);
+    if (!$order) {
+        return response()->json(['message' => 'Order not found.'], 404);
+    }
+
+    // Calculate the updated return money
+    $returnAmount = $request->input('returnAmount');
+    
+    // Update return money field in the order
+    $order->return_money = $returnAmount;
+    
+    // Update the total payment (reduce by the return amount)
+    $order->totalAmount -= $returnAmount;
+
+    // Save the updated order
+    $order->save();
+
+    // Update stock and payment tracker as necessary
+    if ($order->orderStatus == 1) { // If the order is delivered
+        foreach ($order->items as $item) {
+            // Update product stock (if applicable)
+            $productSize = ProductSize::find($item['product_sizes_id']);
+            if ($productSize) {
+                $productSize->update([
+                    'stock' => $productSize->stock + ($item['dQty'] ?? 0),
+                ]);
+            }
+        }
+
+        // Update the payment tracker (if necessary)
+        $paymentDetails = PaymentTracker::firstOrNew(['customer_id' => $order->customer_id]);
+        $paymentDetails->amount += $returnAmount; // Adjust the amount based on the return
+        $paymentDetails->save();
+    }
+
+    return response()->json([
+        'message' => 'Return money updated successfully.',
+        'order' => $order,
+    ]);
+}
+
 }

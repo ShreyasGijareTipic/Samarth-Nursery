@@ -57,9 +57,9 @@ const Invoice = () => {
         oPrice: 0,
         bPrice: 0,
         dPrice: 0,
-        dQty: 0,
-        eQty: 0,
-        qty: 0,
+        dQty: null,
+        eQty: null,
+        qty: null,
         total_price: 0,
         returnable: 0,
       },
@@ -188,9 +188,9 @@ const Invoice = () => {
         oPrice: 0,
         dPrice: 0,
         bPrice: 0,
-        qty: 0,
-        dQty: 0,
-        eQty: 0,
+        qty: null,
+        dQty: null,
+        eQty: null,
         total_price: 0,
         returnable: 0,
       })
@@ -262,8 +262,8 @@ const Invoice = () => {
         old.items[index].size_local_name = p.sizes[0].localName
         old.items[index].product_local_name = p.localName
         old.items[index].oPrice = p.sizes[0].oPrice
-        old.items[index].dQty = 0
-        old.items[index].eQty = 0
+        old.items[index].dQty = null  
+        old.items[index].eQty = null
         old.items[index].dPrice = p.sizes[0].dPrice
         old.items[index].bPrice = p.sizes[0].bPrice
         old.items[index].returnable = p.sizes[0].returnable
@@ -382,7 +382,7 @@ const Invoice = () => {
           oPrice: 0,
           dPrice: 0,
           bPrice: 0,
-          qty: 0,
+          qty: null,
           total_price: 0,
         },
       ],
@@ -396,7 +396,7 @@ const Invoice = () => {
   }
   return (
     <CRow>
-      <NewCustomerModal onSuccess={onCustomerAdded} visible={showCustomerModal} setVisible={setShowCustomerModal} />
+      <NewCustomerModal hint={customerName.name} onSuccess={onCustomerAdded} visible={showCustomerModal} setVisible={setShowCustomerModal} />
       <QRCodeModal visible={showQR} setVisible={setShowQR}></QRCodeModal>
       <CCol xs={12}>
         <CCard className="mb-4">
@@ -434,11 +434,11 @@ const Invoice = () => {
                     </ul>
                   )}
                 </div>
-                <div className="col-3">
+                {/* <div className="col-3">
                   <CBadge role="button" color="danger" onClick={() => setShowCustomerModal(true)}>
                     {t('invoice.new_customer')}
                   </CBadge>
-                </div>
+                </div> */}
               </div>
               {customerName.id && (
                 <div className="row">
