@@ -32,7 +32,7 @@ const Login = () => {
 
   useEffect(() => {
     if (isLogIn()) {
-      navigate('/');
+      navigate('/dashboard');
     }
   }, []);
 
@@ -147,9 +147,6 @@ const Login = () => {
                       </CCol>
                       <CCol xs={6}>
                         <CCol xs={6} className="text-right">
-                          <CButton color="link" className="px-0" onClick={goToFaq}>
-                            Help?  {/* Use goToFaq function for Help button */}
-                          </CButton>
                         </CCol>
                       </CCol>
                     </CRow>

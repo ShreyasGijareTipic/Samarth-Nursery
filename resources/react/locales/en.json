@@ -104,7 +104,8 @@
     "short_desc": "Short Desc",
     "edit": "Edit",
     "delete": "Delete",
-    "status": "Status"
+    "status": "Status",
+    "customer_id" : "customer"
 
     },
     "MSG": {
@@ -159,7 +160,7 @@
           "discount": "Discount",
           "paid_amount": "Paid Amount",
           "balance_amount": "Balance Amount",
-          "final_amount": "Biiled Amount",
+          "final_amount": "Billed Amount",
           "submit": "Submit",
           "clear": "Clear",
           "view_qr": "View QR",
@@ -168,6 +169,8 @@
           "pune": "Pune",
           "online": "Online/UPI",
           "cash": "cash",
-          "new_invoice" : "New invoice"
+          "new_invoice" : "New invoice",
+          "balance": "Balance",
+          "advance": "Advance"
         }
     }   

@@ -167,6 +167,12 @@ export default function fetchRoutes(){
     { path: '/customer/all', name: 'All Products', element: AllCustomers },
     { path: '/customer/edit/:id', name: 'Edit Customer', element: EditCustomer },
     { path:'/updatepassword', name: 'Update Password', element: Updatepassword },
+    
+    
+    //products
+    { path: '/products/new', name: 'New Product', element: NewProduct },
+    { path: '/products/all', name: 'All Products', element: AllProducts },
+    { path: '/products/edit/:id', name: 'Edit Products', element: EditProduct },
 
      //Ticket
      { path: '/TicketFormLogin', name: 'TicketFormLogin', element: TicketFormLogin },

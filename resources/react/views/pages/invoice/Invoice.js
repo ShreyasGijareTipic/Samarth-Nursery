@@ -540,95 +540,155 @@ const Invoice = () => {
                   )}
                 </div>
               </div>
-              {/* Products table */}
-              <div className="row">
-                <div className="col-4">
-                  <div className="mb-1">
-                    <b>{t('invoice.product')}</b>
-                  </div>
-                </div>
-                <div className="col-2">
-                  <div className="mb-1">
-                    <b>{t('invoice.price')}</b>
-                  </div>
-                </div>
-                <div className="col-2">
-                  <div className="mb-1">
-                    <b>{t('invoice.quantity')}</b>
-                  </div>
-                </div>
-                <div className="col-2">
-                  <div className="mb-1">
-                    <b>{t('invoice.total')}</b>
-                  </div>
-                </div>
-                <div className="col-2">
-                  <div className="mb-1">
-                    <b>{t('invoice.action')}</b>
-                  </div>
-                </div>
-              </div>
-  
-              {state.items?.map((oitem, index) => (
-                <div key={index} className="row">
-                  <div className="col-4">
-                    <div className="mb-1">
-                      <CFormSelect
-                        aria-label={t('invoice.select_product')}
-                        value={oitem.product_id}
-                        options={products}
-                        onChange={() => handleProductChange(event, index)}
-                        invalid={oitem.notSelected == true}
-                        required
-                        feedbackInvalid={t('invoice.select_product')}
-                      />
-                    </div>
-                  </div>
-                  <div className="col-2">
-                    <p>{oitem.dPrice + (oitem.unit ? ' / ' + oitem.unit : '')}</p>
-                  </div>
-                  <div className="col-2">
-                    <CFormInput
-                      type="number"
-                      value={oitem.dQty}
-                      invalid={oitem.invalidQty == true}
-                      required
-                      feedbackInvalid={`${t('invoice.max')} ${oitem.stockQty}`}
-                      onChange={() => handleQtyChange(event, index)}
-                    />
-                  </div>
-                  <div className="col-2">
-                    <p>{oitem.total_price}</p>
-                  </div>
-                  <div className="col-2">
-                    {state.items.length > 1 && (
-                      <CButton color="" onClick={() => handleRemoveProductRow(index)}>
-                        <CIcon icon={cilDelete} size="xl" style={{ '--ci-primary-color': 'red' }} />
-                      </CButton>
-                    )}
-                    &nbsp;
-                    {index === state.items.length - 1 && (
-                      <CButton onClick={handleAddProductRow} color="">
-                        <CIcon icon={cilPlus} size="xl" style={{ '--ci-primary-color': 'green' }} />
-                      </CButton>
-                    )}
-                  </div>
-                </div>
-              ))}
-              <div className="row">
-                <div className="col-1">
-                  <div className="mb-1"> </div>
-                </div>
-                <div className="col-3">
-                  <div className="mb-1"></div>
-                </div>
-                <div className="col-2"></div>
-                <div className="col-2">
-                  <b>{t('invoice.total')}</b>
-                </div>
-                <div className="col-2">{state.totalAmount}</div>
-                <div className="col-2"></div>
-              </div>
+                        {/* Desktop Layout (Table Format) */}
+<div className="d-none d-md-block">
+  <div className="row">
+    <div className="col-4">
+      <b>{t('invoice.product')}</b>
+    </div>
+    <div className="col-2">
+      <b>{t('invoice.price')}</b>
+    </div>
+    <div className="col-2">
+      <b>{t('invoice.quantity')}</b>
+    </div>
+    <div className="col-2">
+      <b>{t('invoice.total')}</b>
+    </div>
+    <div className="col-2">
+      <b>{t('invoice.action')}</b>
+    </div>
+  </div>
+
+  {state.items?.map((oitem, index) => (
+    <div key={index} className="bg-light rounded p-3 my-2">
+      <div className="row align-items-center">
+        <div className="col-4">
+          <CFormSelect
+            aria-label={t('invoice.select_product')}
+            value={oitem.product_id}
+            options={products}
+            onChange={() => handleProductChange(event, index)}
+            invalid={oitem.notSelected == true}
+            required
+            feedbackInvalid={t('invoice.select_product')}
+          />
+        </div>
+        <div className="col-2">
+          <p>{oitem.dPrice + (oitem.unit ? ' / ' + oitem.unit : '')}</p>
+        </div>
+        <div className="col-2">
+          <CFormInput
+            type="number"
+            value={oitem.dQty}
+            invalid={oitem.invalidQty == true}
+            required
+            feedbackInvalid={`${t('invoice.max')} ${oitem.stockQty}`}
+            onChange={() => handleQtyChange(event, index)}
+          />
+        </div>
+        <div className="col-2">
+          <p>{oitem.total_price}</p>
+        </div>
+        <div className="col-2 d-flex">
+          {state.items.length > 1 && (
+            <CButton color="" onClick={() => handleRemoveProductRow(index)}>
+              <CIcon icon={cilDelete} size="xl" style={{ '--ci-primary-color': 'red' }} />
+            </CButton>
+          )}
+          {index === state.items.length - 1 && (
+            <CButton onClick={handleAddProductRow} color="">
+              <CIcon icon={cilPlus} size="xl" style={{ '--ci-primary-color': 'green' }} />
+            </CButton>
+          )}
+        </div>
+      </div>
+    </div>
+  ))}
+</div>
+
+{/* Mobile Layout (Stacked Format) */}
+<div className="d-block d-md-none">
+  {state.items?.map((oitem, index) => (
+    <div key={index} className="bg-light rounded p-3 my-3">
+      {/* Product Field */}
+      <div className="mb-2">
+        <label className="font-weight-bold">{t('invoice.product')}</label>
+        <CFormSelect
+          aria-label={t('invoice.select_product')}
+          value={oitem.product_id}
+          options={products}
+          onChange={() => handleProductChange(event, index)}
+          invalid={oitem.notSelected == true}
+          required
+          feedbackInvalid={t('invoice.select_product')}
+        />
+      </div>
+
+      {/* Price Field */}
+      <div className="mb-2">
+        <label className="font-weight-bold">{t('invoice.price')}</label>
+        <p>{oitem.dPrice + (oitem.unit ? ' / ' + oitem.unit : '')}</p>
+      </div>
+
+      {/* Quantity Field */}
+      <div className="mb-2">
+        <label className="font-weight-bold">{t('invoice.quantity')}</label>
+        <CFormInput
+          type="number"
+          value={oitem.dQty}
+          invalid={oitem.invalidQty == true}
+          required
+          feedbackInvalid={`${t('invoice.max')} ${oitem.stockQty}`}
+          onChange={() => handleQtyChange(event, index)}
+        />
+      </div>
+
+      {/* Total and Actions */}
+      <div className="row align-items-center">
+        <div className="col-6">
+          <label className="font-weight-bold">{t('invoice.total')}</label>
+          <p>{oitem.total_price}</p>
+        </div>
+        <div className="col-6 d-flex justify-content-start">
+          {state.items.length > 1 && (
+            <CButton color="" onClick={() => handleRemoveProductRow(index)}>
+              <CIcon icon={cilDelete} size="xl" style={{ '--ci-primary-color': 'red' }} />
+            </CButton>
+          )}
+          {index === state.items.length - 1 && (
+            <CButton onClick={handleAddProductRow} color="">
+              <CIcon icon={cilPlus} size="xl" style={{ '--ci-primary-color': 'green' }} />
+            </CButton>
+          )}
+        </div>
+      </div>
+    </div>
+  ))}
+</div>
+
+
+
+            {/* Total Amount Section (Desktop) */}
+<div className="row d-none d-md-flex align-items-center">
+  <div className="col-6"></div>
+  <div className="col-2">
+    <b>{t('invoice.total')}</b>
+  </div>
+  <div className="col-2">{state.totalAmount}</div>
+  <div className="col-2"></div>
+</div>
+
+{/* Total Amount Section (Mobile) */}
+<div className="d-block d-md-none bg-light rounded p-3 my-3">
+  <div className="row align-items-center">
+    <div className="col-6">
+      <b>{t('invoice.total')}</b>
+    </div>
+    <div className="col-6 text-right">{state.totalAmount}</div>
+  </div>
+</div>
+
               {/* Payment and Final Actions */}
               <div>
                 <CRow>

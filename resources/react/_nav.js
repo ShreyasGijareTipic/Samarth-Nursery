@@ -546,6 +546,28 @@ export default function fetchNavItems(t1){
             }
           ],
         },
+        {
+          component: CNavGroup,
+          name: t("LABELS.products"),
+          icon: <CIcon icon={cilNotes} customClassName="nav-icon" />,
+          items: [
+            {
+              component: CNavItem,
+              name: t("LABELS.new_product"),
+              to: '/products/new',
+            },
+            {
+              component: CNavItem,
+              name: t("LABELS.all_products"),
+              to: '/products/all',
+            },
+            // {
+            //   component: CNavItem,
+            //   name: 'Bulk Quantity ',
+            //   to: 'products/updateqty',
+            // },        
+          ],
+        },
       ])
     }else{
       _nav.push(...[

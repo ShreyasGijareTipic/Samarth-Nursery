@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\PaymentTracker;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class PaymentTrackerController extends Controller
 {
@@ -15,25 +16,43 @@ class PaymentTrackerController extends Controller
         $this->user = Auth::user();
     }
 
-    /**
-     * Display a listing of the resource.
-     */
+    // List all payments for admin or specific company payments
     public function index()
     {
         $user = Auth::user();
         $companyId = $user->company_id;
         $userType = $user->type;
 
+        // Log user details for debugging
+        Log::info("User ID: " . $user->id);
+        Log::info("Company ID: " . $companyId);
+        Log::info("User Type: " . $userType);
+
         if ($userType == 0) {
-            return PaymentTracker::all(); // Admin can see all records
+            return PaymentTracker::all();
         } else {
-            return PaymentTracker::where('company_id', $companyId)->get(); // Non-admin can see only their company's records
+            return PaymentTracker::where('company_id', $companyId)->get();
         }
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    // Show a specific payment record
+    public function show($id)
+    {
+        $user = Auth::user();
+        $companyId = $user->company_id;
+        $userType = $user->type;
+
+        // Log for debugging
+        Log::info("Fetching payment record for ID: " . $id);
+
+        if ($userType == 0) {
+            return PaymentTracker::find($id);
+        } else {
+            return PaymentTracker::where('company_id', $companyId)->find($id);
+        }
+    }
+
+    // Store a new payment record
     public function store(Request $request)
     {
         $request->validate([
@@ -42,75 +61,105 @@ class PaymentTrackerController extends Controller
             'isCredit' => 'required|boolean',
         ]);
 
-        // Create a new PaymentTracker record
+        // Log for debugging
+        Log::info("Storing new payment record for customer ID: " . $request->customer_id);
+
         return PaymentTracker::create(array_merge($request->all(), [
-            'created_by' => $this->user->id, // Track who created the record
+            'created_by' => $this->user->id,
+            'company_id' => $this->user->company_id,
         ]));
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show($id)
+    // Update return payment (used in handleReturnMoneySubmit)
+    public function update(Request $request, $customerId)
     {
-        $user = Auth::user();
-        $companyId = $user->company_id;
-        $userType = $user->type;
-
-        if ($userType == 0) {
-            return PaymentTracker::find($id); // Admin can see any record
-        } else {
-            return PaymentTracker::where('company_id', $companyId)->find($id); // Non-admin can see only their company's records
-        }
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
-    {
-        $user = Auth::user();
-        $companyId = $user->company_id;
-        $userType = $user->type;
-
         $request->validate([
-            'amount' => 'required|numeric',
-            'customer_id' => 'required|integer',
-            'isCredit' => 'required|boolean',
+            'returnAmount' => 'required|numeric',
         ]);
 
-        if ($userType == 0) {
-            $paymentTracker = PaymentTracker::find($id);
-            $paymentTracker->update(array_merge($request->all(), [
-                'updated_by' => $this->user->id, // Track who updated the record
-            ]));
-            return $paymentTracker;
-        } else {
-            $paymentTracker = PaymentTracker::where('company_id', $companyId)->find($id);
-            if ($paymentTracker) {
-                $paymentTracker->update(array_merge($request->all(), [
-                    'updated_by' => $this->user->id,
-                ]));
-                return $paymentTracker;
-            }
-            return response()->json(['message' => 'Not found'], 404); // Not found response
+        $user = Auth::user();
+        $companyId = $user->company_id;
+        $userType = $user->type;
+
+        // Log for debugging
+        Log::info("Updating payment record for customer ID: " . $customerId . " with returnAmount: " . $request->returnAmount);
+
+        // Fetch the payment tracker based on customer_id
+        $paymentTracker = PaymentTracker::where('customer_id', $customerId)->first();
+
+        // Check if the record exists
+        if (!$paymentTracker) {
+            return response()->json(['message' => 'Not found'], 404);
         }
+
+        // Update the amount
+        $paymentTracker->update([
+            'amount' => $paymentTracker->amount - $request->returnAmount,
+            'updated_by' => $this->user->id,
+        ]);
+
+        // Return the updated payment tracker
+        return response()->json($paymentTracker, 200);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    // Delete a payment record
     public function destroy($id)
     {
         $user = Auth::user();
         $companyId = $user->company_id;
         $userType = $user->type;
 
-        if ($userType == 0) {
-            return PaymentTracker::destroy($id); // Admin can delete any record
-        } else {
-            // Destroy if company ID matches
-            return PaymentTracker::where('company_id', $companyId)->destroy($id);
+        // Log for debugging
+        Log::info("Deleting payment record for ID: " . $id);
+
+        $paymentTracker = PaymentTracker::where('id', $id)
+            ->where(function ($query) use ($userType, $companyId) {
+                if ($userType != 0) {
+                    $query->where('company_id', $companyId);
+                }
+            })->first();
+
+        if ($paymentTracker) {
+            $paymentTracker->delete();
+            return response()->json(['message' => 'Deleted successfully'], 200);
         }
+
+        return response()->json(['message' => 'Not found'], 404);
+    }
+
+    /**
+     * Update the amount for a specific payment tracker.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $customerId
+     * @return \Illuminate\Http\Response
+     */
+    public function updateAmount(Request $request, $customerId)
+    {
+        // Validate the incoming data
+        $request->validate([
+            'amount' => 'required|numeric', // You can adjust the validation as needed
+        ]);
+
+        // Retrieve the amount from the request
+        $amount = $request->input('amount');
+
+        // Log for debugging
+        Log::info("Updating amount for customer ID: " . $customerId . " with amount: " . $amount);
+
+        // Find the payment tracker record by customer_id
+        $paymentTracker = PaymentTracker::where('customer_id', $customerId)->first();
+
+        // Check if the record exists
+        if (!$paymentTracker) {
+            return response()->json(['error' => 'Payment tracker not found for the given customer.'], 404);
+        }
+
+        // Update the amount
+        $paymentTracker->amount = $amount;
+        $paymentTracker->save();
+
+        // Return a success response
+        return response()->json(['message' => 'Amount updated successfully.'], 200);
     }
 }

@@ -145,13 +145,13 @@ export default defineConfig(({ mode }) => {
 
             // Ensure the JS build does not get dropped from the cache.
             // This allows it to be as big as 3MB
-            maximumFileSizeToCacheInBytes: 3000000
+            maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         },
         // Manifest settings - these will appear in the generated manifest.webmanifest
         manifest: {
-          name: "AquaLogiX",
-          short_name: "AquaLogiX",
-          description: "An app to manage AquaLogiXs.",
+          name: "Samarth Nursery",
+          short_name: "Samarth Nursery",
+          description: "An app to Samarth Nursery.",
           theme_color: "#171717",
           background_color: "#e8ebf2",
           display: "standalone",

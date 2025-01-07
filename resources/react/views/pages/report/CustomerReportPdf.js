@@ -1,5 +1,4 @@
-import jsPDF from "jspdf";
-import "jspdf-autotable";
+import html2pdf from "html2pdf.js";
 import { getUserData } from '../../../util/session';
 import { marathiFont } from '../../common/font';
 
@@ -8,216 +7,115 @@ const formatDate = (dateString) => {
     const date = new Date(dateString);
     const formattedDate = date.toLocaleDateString('en-US', options).replace(',', '');
     
-    // Split the formatted date to rearrange it
     const [month, day, year] = formattedDate.split(' ');
     return `${day} ${month} ${year}`;
 };
 
 function convertTo12HourFormat(time) {
-    // Split the time into hours and minutes
     let [hours, minutes] = time.split(':').map(Number);
-    
-    // Determine AM or PM suffix
     const suffix = hours >= 12 ? 'PM' : 'AM';
-    
-    // Convert hours from 24-hour format to 12-hour format
-    hours = hours % 12 || 12; // Convert 0 to 12 for midnight
-
-    // Return the formatted time
+    hours = hours % 12 || 12;
     return `${hours}:${minutes.toString().padStart(2, '0')} ${suffix}`;
 };
 
-export function generatePDFReport(grandTotal, state, report,remainingAmount) {
-    // PDF generation logic
-    const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-        filters: ['ASCIIHexEncode']
-    });
-    
-    pdf.addFileToVFS("NotoSansDevanagari.ttf", marathiFont);
-    pdf.addFont("NotoSansDevanagari.ttf", "NotoSansDevanagari", "normal");
-    pdf.setFont("NotoSansDevanagari");
-
+export function generatePDFReport(grandTotal, state, report, remainingAmount) {
     const ci = getUserData()?.company_info;
 
-    const fontSize = 10;
-    pdf.setFontSize(fontSize);
-    // pdf.setLineWidth(0.5);
-    pdf.setDrawColor("#333");
-    pdf.rect(0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight(), "S");
+    // Create HTML structure for the invoice
+    const htmlContent = `
+    <div style="font-family: 'NotoSansDevanagari', sans-serif; font-size: 12px;">
+        <div style="text-align: center;">
+            <img src="img/${ci.logo}" alt="Logo" style="width: 40px; height: 40px; margin-bottom: 10px;">
+            <h2 style="color: green;">Order Report</h2>
+        </div>
+        
+        <div style="text-align: right;">
+            <p><strong>${ci.company_name}</strong></p>
+            <p>${ci.land_mark}</p>
+            <p>${ci.Tal}, ${ci.Dist}, ${ci.pincode}</p>
+            <p>Phone: ${ci.phone_no}</p>
+        </div>
+        
+        <div>
+            <h3>Invoice to:</h3>
+            <p>Customer Name: ${state.customer?.name || "NA"}</p>
+            <p>Customer Address: ${state.customer?.address || "NA"}</p>
+            <p>Mobile Number: ${state.customer?.mobile || "NA"}</p>
+            <p>Invoice No: NA</p>
+            <p>Start Date: ${formatDate(state.start_date)}</p>
+            <p>End Date: ${formatDate(state.end_date)}</p>
+        </div>
 
-    const img = new Image();
-    img.src = 'img/'+ci.logo;
-    pdf.addImage(img, "PNG", 15, 10, 40, 40);
-    pdf.setFontSize(15);
-    pdf.setTextColor("#000");
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px; border: 1px solid #ddd;">
+            <thead>
+                <tr style="background-color: #f2f2f2; text-align: center;">
+                    <th style="border: 1px solid #ddd; padding: 5px;">Sr No</th>
+                    <th style="border: 1px solid #ddd; padding: 5px;">Delivery Date & Time</th>
+                    <th style="border: 1px solid #ddd; padding: 5px;">Items</th>
+                    <th style="border: 1px solid #ddd; padding: 5px;">Paid (Rs)</th>
+                    <th style="border: 1px solid #ddd; padding: 5px;">Pending (Rs)</th>
+                    <th style="border: 1px solid #ddd; padding: 5px;">Total (Rs)</th>
+                    <th style="border: 1px solid #ddd; padding: 5px;">Delivered By</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${report.map((p, index) => {
+                    return `
+                    <tr style="text-align: center;">
+                        <td style="border: 1px solid #ddd; padding: 5px;">${index + 1}</td>
+                        <td style="border: 1px solid #ddd; padding: 5px;">${formatDate(p.deliveryDate)} (${convertTo12HourFormat(p.deliveryTime)})</td>
+                        <td style="border: 1px solid #ddd; padding: 5px;">
+                            ${p.items.map(i => `
+                                ${i.product_name} ${i.dQty > 0 ? `(${i.dQty} Delivered)` : ''} ${i.eQty > 0 ? `(${i.eQty} Collected)` : ''}
+                            `).join("<br>")}
+                        </td>
+                        <td style="border: 1px solid #ddd; padding: 5px;">${p.paidAmount}</td>
+                        <td style="border: 1px solid #ddd; padding: 5px;">${(p.totalAmount - p.paidAmount)}</td>
+                        <td style="border: 1px solid #ddd; padding: 5px;">${p.totalAmount}</td>
+                        <td style="border: 1px solid #ddd; padding: 5px;">${p.user.name}</td>
+                    </tr>`;
+                }).join('')}
+            </tbody>
+        </table>
 
-    const INVOICE = "Order Report";
-    const headingX = pdf.internal.pageSize.getWidth() / 2;
-    
-    // Set font to bold and increase size by 1.5 times
-    pdf.setFont( "bold");
-    // "helvetica"
-    
-    pdf.setFontSize(17);
-    
-    // Set color
-    pdf.setTextColor(0, 128, 0); // Green
-    pdf.text(`${INVOICE}`, headingX, 10, { align: "center" });
-    
-    // Reset the font size to original after use if needed
-    pdf.setFontSize(10);
-    pdf.setFont("normal");
-    pdf.setTextColor("#000"); // Reset to default color
+        <div style="margin-top: 20px;">
+            <h4>Grand Total</h4>
+            <p>Amount Paid: ${(grandTotal - remainingAmount).toFixed(2)} /-</p>
+            <p>Balance Amount: ${remainingAmount.toFixed(2)} /-</p>
+        </div>
 
-    pdf.text(ci.company_name, pdf.internal.pageSize.getWidth() - 65, 20);
-    pdf.text(ci.land_mark, pdf.internal.pageSize.getWidth() - 65, 25);
-    pdf.text(ci.Tal+" , "+ci.Dist+" , "+ci.pincode, pdf.internal.pageSize.getWidth() - 65, 30);
-    pdf.text("Phone: "+ci.phone_no, pdf.internal.pageSize.getWidth() - 65, 35);
+        <div style="margin-top: 20px;">
+            <h4>Bank Details</h4>
+            <p>Bank Name: ${ci.bank_name}</p>
+            <p>Account No: ${ci.account_no}</p>
+            <p>IFSC Code: ${ci.IFSC_code}</p>
+            <div style="float: right; font-weight: bold; text-align: center;">
+                <p>E-SIGNATURE</p>
+                <img src="img/${ci.sign}" alt="Signature" style="width: 35px; height: 20px;">
+                <p>Authorized Signature</p>
+            </div>
+        </div>
 
-    pdf.setTextColor("#000");
-    pdf.setFontSize(13);
-    pdf.text(`Invoice to:`, 15, 60);
-    pdf.setFont("normal");
-    pdf.setFontSize(11);
-    pdf.text(`Customer Name    : ${state.customer?.name || "NA"}`, 15, 70);
-    pdf.text(`Customer Address : ${state.customer?.address || "NA"}`, 15, 75);
-    pdf.text(`Mobile Number     : ${state.customer?.mobile || "NA"} `, 15, 80);
-    pdf.text(`Invoice No: NA`, 145, 70);
+        <div style="text-align: center; margin-top: 20px; font-size: 10px;">
+            <p>This bill has been computer-generated and is authorized.</p>
+        </div>
+    </div>`;
 
-    const formattedDate = state.start_date;
-    pdf.text(`Start Date: ${formattedDate}`, 145, 75);
-    const formattedDeliveryDate = state.end_date;
-    pdf.text(`End Date: ${formattedDeliveryDate}`, 145, 80);
-    pdf.setFontSize(10);
-    const grandTotalRow = (state.customer?.name?.length > 0) ? 
-    ["","", "Grand Total", grandTotal - remainingAmount, remainingAmount , grandTotal + " /-"] :
-    ["", "","", "Grand Total", grandTotal - remainingAmount, remainingAmount , grandTotal + " /-"];
+    // Convert HTML to PDF using html2pdf
+    const element = document.createElement('div');
+    element.innerHTML = htmlContent;
 
-    pdf.autoTable({
-        startY: 90,
-        head: [(state.customer?.name?.length > 0) ?
-            ["Sr No", "Delivery Date & Time", "Items", "Paid (Rs)", "Pending (Rs)", "Total (Rs)", "Delivered By"] :
-            ["Sr No","Name", "Delivery Date & Time", "Items", "Paid (Rs)", "Pending (Rs)", "Total (Rs)", "Delivered By"]
-        ],
-        body: [
-            ...report.map((p, index) => {
-                //customer
-                // Create a row for the main table
-                let mainRow = [
-                    index + 1,
-                    formatDate(p.deliveryDate) + "\n ( " + convertTo12HourFormat(p.deliveryTime) + " )",
-                    p.items.map(i => [
-                        i.product_name,
-                        i.dQty > 0 ? i.dQty + '(Delivered '+i.dPrice+' Rs each)' : '',
-                        i.eQty > 0 ? i.eQty + '(Collected)' : ''
-                    ]),
-                    p.paidAmount,
-                    (p.totalAmount - p.paidAmount),
-                    p.totalAmount,
-                    p.user.name,
-                ];
+    // Set options for html2pdf
+    const options = {
+        margin: [10, 10, 10, 10],
+        filename: `${state.customer?.name?.replace(" ", "-")}-${new Date().getTime()}.pdf`,
+        html2canvas: { scale: 4 },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+    };
 
-                if(!state.customer?.name?.length){
-                    mainRow.splice(1, 0, p.customer.name);
-                }
-
-                // Save the current Y position for the inner table
-                // const currentY = pdf.autoTable.previous.finalY;
-
-                // // Draw the inner table for p.items
-                // pdf.autoTable({
-                //     startY: currentY + 10, // Adjust Y position for the inner table
-                //     body: [],
-                //     theme: "grid",
-                //     styles: { halign: "left", valign: "middle", fontSize: 10, lineWidth: 0.1, lineColor: [0, 0, 0] },
-                //     margin: { left: 15 }, // Optional: Adjust margin for inner table
-                // });
-
-                return mainRow;
-            }),
-            grandTotalRow,
-        ],
-        theme: "grid",
-        styles: { halign: "center", valign: "middle", fontSize: 10, lineWidth: 0.1, lineColor: [0, 0, 0] },
-        columnStyles: {
-            0: { halign: "center" },
-            3: { halign: "center" },
-            4: { halign: "center" },
-        },
-    });
-
-    // Prepare additional details data
-    const additionalDetailsData = [];
-
-    additionalDetailsData.push(
-        ["Amount Paid:",`${ (grandTotal - remainingAmount).toFixed(2)}`+" /-"],
-        ["Balance Amount:",`${remainingAmount.toFixed(2)}`+" /-" ]
-    );
-
-    pdf.autoTable({
-        body: additionalDetailsData,
-        // startY: y,
-        margin: { top: 10, bottom: 20 },
-        theme: "grid",
-        styles: { halign: "left", valign: "middle", fontSize: 10, lineWidth: 0.1, lineColor: [0, 0, 0] },
-    });
-
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    let bankDetailsY = pdf.autoTable.previous.finalY + 10;
-
-    const bankDetailsHeight = 40; // Adjust this value based on the height of the "Bank Details" section
-    if (bankDetailsY + bankDetailsHeight > pageHeight) {
-        pdf.addPage(); // Add a new page if not enough space
-    }
-
-    bankDetailsY = pageHeight - 50;
-
-    pdf.setFont("normal");
-    pdf.setLineWidth(0.2);
-    pdf.setDrawColor("#000");
-    pdf.rect(13.5, bankDetailsY, pdf.internal.pageSize.getWidth() - 28.5, 40, "S");
-    pdf.setFontSize(12);
-
-    pdf.text("Bank Details", 20, bankDetailsY + 9);
-    pdf.setFontSize(10);
-    pdf.setFont("normal");
-    pdf.text(ci.bank_name, 20, bankDetailsY + 20);
-    pdf.text('Account No: '+ci.account_no, 20, bankDetailsY + 25);
-    pdf.text('IFSC code  : '+ci.IFSC_code, 20, bankDetailsY + 30);
-    pdf.setFont("bold");
-    pdf.text(
-        "E-SIGNATURE",
-        pdf.internal.pageSize.width - 84,
-        bankDetailsY + 8
-    );
-    pdf.addImage(
-        'img/'+ci.sign,
-        "JPG",
-        pdf.internal.pageSize.width - 72,
-        bankDetailsY + 9,
-        35,
-        20
-    );
-    pdf.setFontSize(10);
-    pdf.text(
-        "Authorized Signature",
-        pdf.internal.pageSize.width - 70,
-        bankDetailsY + 36
-    );
-
-    const additionalMessage = "This bill has been computer-generated and is authorized.";
-    const additionalMessageWidth = pdf.getStringUnitWidth(additionalMessage) * 6;
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    pdf.setDrawColor(0);
-    pdf.rect(0, 0, pageWidth, pageHeight);
-    pdf.setFontSize(10);
-    const shiftRight = 15;
-    const textXAdditional = (pageWidth - additionalMessageWidth) / 1.3 + shiftRight;
-    const textY = pageHeight - 5;
-    pdf.text(additionalMessage, textXAdditional, textY);
-
-    pdf.save(`${state.customer?.name?.replace(" ","-")}-${new Date().getTime()}.pdf`);
+    // Generate PDF from HTML
+    html2pdf()
+        .from(element)
+        .set(options)
+        .save();
 }

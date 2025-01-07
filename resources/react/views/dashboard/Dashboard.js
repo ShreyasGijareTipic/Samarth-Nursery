@@ -67,30 +67,32 @@ const Dashboard = (Props) => {
       {stock.length > 0 && (
         <CCard className="mt-4 mb-4">
           <CCardBody>
-            <CRow>
+            <CRow className="justify-content-center">
               <h4 className="card-title mb-0 text-center"> {t('LABELS.overview')} </h4>
-              <CTable>
-                <CTableHead>
-                  <CTableRow>
-                    <CTableHeaderCell scope="col">{t('LABELS.product')}</CTableHeaderCell>
-                    <CTableHeaderCell scope="col" className="text-center">{t('LABELS.total')}</CTableHeaderCell>
-                    <CTableHeaderCell scope="col" className="text-center">{t('LABELS.stock')}</CTableHeaderCell>
-                    <CTableHeaderCell scope="col" className="text-center">{t('LABELS.given')}</CTableHeaderCell>
-                    <CTableHeaderCell scope="col" className="text-center">{t('LABELS.booked')}</CTableHeaderCell>
-                  </CTableRow>
-                </CTableHead>
-                <CTableBody>
-                  {stock.filter(p => p.product && p.product.showOnHome).map(p => (
-                    <CTableRow key={p.id}>
-                      <CTableHeaderCell>{lng === 'en' ? p.name : p.localName}</CTableHeaderCell>
-                      <CTableDataCell className='bg-primary font-weight-bold text-white text-center'>{p.qty}</CTableDataCell>
-                      <CTableDataCell className='bg-success font-weight-bold text-white text-center'>{p.stock}</CTableDataCell>
-                      <CTableDataCell className='bg-danger font-weight-bold text-white text-center'>{p.qty - p.stock}</CTableDataCell>
-                      <CTableDataCell className='bg-warning font-weight-bold text-white text-center'>{p.booked}</CTableDataCell>
+              <div className="overflow-x-auto w-full">
+                <CTable className="min-w-[600px]">
+                  <CTableHead>
+                    <CTableRow>
+                      <CTableHeaderCell scope="col">{t('LABELS.product')}</CTableHeaderCell>
+                      <CTableHeaderCell scope="col" className="text-center">{t('LABELS.total')}</CTableHeaderCell>
+                      <CTableHeaderCell scope="col" className="text-center">{t('LABELS.stock')}</CTableHeaderCell>
+                      <CTableHeaderCell scope="col" className="text-center">{t('LABELS.given')}</CTableHeaderCell>
+                      <CTableHeaderCell scope="col" className="text-center">{t('LABELS.booked')}</CTableHeaderCell>
                     </CTableRow>
-                  ))}
-                </CTableBody>
-              </CTable>
+                  </CTableHead>
+                  <CTableBody>
+                    {stock.filter(p => p.product && p.product.showOnHome).map(p => (
+                      <CTableRow key={p.id}>
+                        <CTableHeaderCell>{lng === 'en' ? p.name : p.localName}</CTableHeaderCell>
+                        <CTableDataCell className='bg-primary font-weight-bold text-white text-center'>{p.qty}</CTableDataCell>
+                        <CTableDataCell className='bg-success font-weight-bold text-white text-center'>{p.stock}</CTableDataCell>
+                        <CTableDataCell className='bg-danger font-weight-bold text-white text-center'>{p.qty - p.stock}</CTableDataCell>
+                        <CTableDataCell className='bg-warning font-weight-bold text-white text-center'>{p.booked}</CTableDataCell>
+                      </CTableRow>
+                    ))}
+                  </CTableBody>
+                </CTable>
+              </div>
             </CRow>
           </CCardBody>
         </CCard>

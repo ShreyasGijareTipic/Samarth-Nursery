@@ -103,7 +103,8 @@
         "short_desc": "लघु वर्णन",
         "edit": "Edit",
         "delete": "Delete",
-        "status": "स्थिती"
+        "status": "स्थिती",
+        "customer_id" : "ग्राहक"
     },
     "MSG": {
         "order_is_delivered_msg": "ऑर्डर डिलिव्हर झाली",
@@ -149,14 +150,14 @@
     "delivery_date": "वितरण तारीख",
     "product": "प्रॉडक्ट",
     "price": "रेट",
-    "quantity": "प्रमाण",
+    "quantity": "क्वांटिटी",
     "total": "एकूण ",
     "action": "कृती",
     "payment_type": "पेमेंट प्रकार",
     "discount": "सवलत ",
     "paid_amount": "रक्कम ",
     "balance_amount": "शिल्लक रक्कम ",
-    "final_amount": "बिल राशी",
+    "final_amount": "बिल टोटल",
     "submit": "सबमिट करा",
     "clear": "क्लिअर करा",
     "view_qr": "QR दाखवा",
@@ -165,6 +166,8 @@
     "pune": "पुणे",
     "online": "ऑनलाइन / UPI",
     "cash": "रोख",
-    "new_invoice" : "नवीन चलन"
+    "new_invoice" : "नवीन चलन",
+    "balance": "शिल्लक",
+    "advance": "आगाऊ"
   }
    }

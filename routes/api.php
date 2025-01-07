@@ -2,10 +2,10 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController; 
-use App\Http\Controllers\ProductController; 
-use App\Http\Controllers\CategoryController; 
-use App\Http\Controllers\SubCategoryController; 
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\SubCategoryController;
 use App\Http\Controllers\SubSubCategoryController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\JarTrackerController;
@@ -15,6 +15,7 @@ use App\Http\Controllers\FileUpload;
 use App\Http\Controllers\CustomerController;
 use App\Http\Middleware\Authorization;
 use App\Http\Controllers\CompanyInfoController;
+use App\Http\Controllers\PaymentTrackerController; // Added controller
 
 // ini_set('display_errors', 1);
 // ini_set('display_startup_errors', 1);
@@ -25,6 +26,7 @@ use App\Http\Controllers\CompanyInfoController;
 Route::post('/register',[AuthController::class, 'register']);
 Route::post('/login',[AuthController::class, 'login']);
 Route::post('/mobileLogin',[AuthController::class, 'mobileLogin']);
+
 //Secured API's
 Route::group(['middleware'=>['auth:sanctum']], function(){
     Route::post('/changePassword',[AuthController::class, 'changePassword']);
@@ -57,14 +59,17 @@ Route::group(['middleware'=>['auth:sanctum']], function(){
     Route::get('/customerReport', [OrderController::class, 'customerReport'])->name('customerReport');
     Route::resource('company', CompanyInfoController::class);
     Route::put('/orders/{id}/updateReturnMoney', [OrderController::class, 'updateReturnMoney']);
+    
+    // Added routes for payment tracking
+    Route::resource('paymentTracker', PaymentTrackerController::class);
+    Route::get('/paymentTrackerReport', [PaymentTrackerController::class, 'generateReport']);
+    Route::put('/paymentTracker/{id}', [PaymentTrackerController::class, 'update']);
+    Route::put('/payment-tracker/{customerId}/update-amount', [PaymentTrackerController::class, 'updateAmount']);
+    
+ // For example: custom report endpoint
 
 });
-
 
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
-
-
-
-

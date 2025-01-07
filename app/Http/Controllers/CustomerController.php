@@ -79,34 +79,36 @@ class CustomerController extends Controller
     }
 
     public function creditReport(Request $request)
-    {
-        $user = Auth::user();
-        $companyId = $user->company_id; // Get the company_id of the authenticated user
+{
+    $user = Auth::user();
+    $companyId = $user->company_id; // Get the company_id of the authenticated user
 
-        // Eager load PaymentTracker and JarTracker relationships
-        $customers = Customer::with(['paymentTracker', 'jarTrackers'])
+    // Eager load PaymentTracker and JarTracker relationships
+    $customers = Customer::with(['paymentTracker', 'jarTrackers'])
         ->where('company_id', $companyId)
         ->get();
 
-        $creditReports = [];
+    $creditReports = [];
 
-        foreach ($customers as $customer) {
-            if ($customer->paymentTracker) {
-                $customerData = [
-                    'name' => $customer->name,
-                    'mobile' => $customer->mobile,
-                    'address' => $customer->address,
-                    'totalPayment' => $customer->paymentTracker->amount,
-                    'items' => $customer->jarTrackers // All items from JarTracker
-                ];
+    foreach ($customers as $customer) {
+        if ($customer->paymentTracker) {
+            $customerData = [
+                'name' => $customer->name,
+                'mobile' => $customer->mobile,
+                'address' => $customer->address,
+                'totalPayment' => $customer->paymentTracker->amount,
+                'customerId' => $customer->id, // Add customer_id here
+                'items' => $customer->jarTrackers // All items from JarTracker
+            ];
 
-                $creditReports[] = $customerData;
-            }
+            $creditReports[] = $customerData;
         }
-
-        return response()->json($creditReports);
     }
 
+    return response()->json($creditReports);
+}
+   
+    
     public function resetAllPayments()
     {
         $user = Auth::user();
