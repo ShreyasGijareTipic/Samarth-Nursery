@@ -171,6 +171,7 @@
           "cash": "cash",
           "new_invoice" : "New invoice",
           "balance": "Balance",
-          "advance": "Advance"
+          "advance": "Advance",
+          "max":"max"
         }
     }   

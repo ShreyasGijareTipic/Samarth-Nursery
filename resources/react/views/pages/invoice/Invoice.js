@@ -323,9 +323,9 @@ const Invoice = () => {
       }
   
       // Ensure at least one product with a quantity greater than zero
-      if (clonedState.items.length === 0 || clonedState.items.every((item) => item.dQty === 0)) {
+      if (clonedState.items.length === 0 || clonedState.items.some((item) => !item.dQty || item.dQty <= 0)) {
         isInvalid = true;
-        showToast('warning', 'Please add at least one product with a quantity greater than zero.');
+        showToast('warning', 'Please ensure all products have a quantity greater than zero.');
       }
   
       // Submit if no validation errors
