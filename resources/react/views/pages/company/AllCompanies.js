@@ -43,7 +43,7 @@ const AllCompanies = () => {
   };
 
   const handleEdit = (p) => {
-    navigate('/company/edit/' + p.id);
+    navigate('/company/edit/' + p.company_id);  // Use company_id instead of id
   };
 
 

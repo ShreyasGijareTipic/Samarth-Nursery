@@ -7,7 +7,8 @@ export function generatePDF(grandTotal, invoiceNo, customerName, formData, remai
 
     if (!ci) {
         console.error("Company Info not found.");
-        return;
+        return doc.output("blob");
+        
     }
 
     // Invoice HTML structure

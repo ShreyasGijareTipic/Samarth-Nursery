@@ -147,7 +147,7 @@ const NewProduct = () => {
               </div>
               <div className="row mb-2">
                 <div className="col-4">
-                  <CFormLabel htmlFor="qty">Product Quantity</CFormLabel>
+                  <CFormLabel htmlFor="qty">Product Qty.</CFormLabel>
                   <CFormInput
                     type="number"
                     id="qty"
@@ -209,7 +209,7 @@ const NewProduct = () => {
                   />
                 </div> */}
               </div>
-              <div className="row mb-2">
+              {/* <div className="row mb-2">
                 <div className="col-sm-3">
                   <CFormCheck
                     id="showOnHome"
@@ -218,8 +218,8 @@ const NewProduct = () => {
                     checked={state.showOnHome}
                     onChange={handleCBChange}
                   />
-                </div>
-                <div className="col-9">
+                </div> */}
+                {/* <div className="col-9">
                     <CFormInput
                       type="text"
                       id="unit"
@@ -229,7 +229,7 @@ const NewProduct = () => {
                       onChange={handleChange}
                     />
                 </div>
-              </div>
+              </div> */}
               <div className="mb-3">
                 <CButton color="success" type="submit">
                   Submit

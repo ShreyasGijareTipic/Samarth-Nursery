@@ -18,7 +18,7 @@ const AllCustomers = () => {
       const response = await getAPICall('/api/customer');
       setCustomers(response);
     } catch (error) {
-      showToast('danger', 'Error occured ' + error);
+      showToast('danger', 'Error occurred: ' + error.message);
     }
   };
 
@@ -33,28 +33,26 @@ const AllCustomers = () => {
 
   const onDelete = async () => {
     try {
-      await deleteAPICall('/api/customer/' + deleteCustomer.id);
+      await deleteAPICall(`/api/customer/${deleteCustomer.id}`);
       setDeleteModalVisible(false);
       fetchProducts();
     } catch (error) {
-      showToast('danger', 'Error occured ' + error);
+      showToast('danger', 'Error occurred: ' + error.message);
     }
   };
 
   const handleEdit = (p) => {
-    navigate('/customer/edit/' + p.id);
+    navigate(`/customer/edit/${p.id}`);
   };
 
-
   const columns = [
-    { accessorKey: 'index', header: 'Id' },
     { accessorKey: 'name', header: 'Name' },
     { accessorKey: 'mobile', header: 'Mobile' },
     {
       accessorKey: 'status',
       header: 'Status',
       Cell: ({ cell }) => (
-        cell.row.original.show == 1 ? (
+        cell.row.original.show === 1 ? (
           <CBadge color="success">Visible</CBadge>
         ) : (
           <CBadge color="danger">Hidden</CBadge>
@@ -65,18 +63,19 @@ const AllCustomers = () => {
       accessorKey: 'actions',
       header: 'Actions',
       Cell: ({ cell }) => (
-        <div>
+        <div className="d-flex flex-wrap">
           <CBadge
             role="button"
             color="info"
+            className="me-2 mb-2"
             onClick={() => handleEdit(cell.row.original)}
           >
             Edit
           </CBadge>
-          &nbsp;
           <CBadge
             role="button"
             color="danger"
+            className="mb-2"
             onClick={() => handleDelete(cell.row.original)}
           >
             Delete
@@ -88,7 +87,7 @@ const AllCustomers = () => {
 
   const data = customers.map((p, index) => ({
     ...p,
-    index: index + 1,
+    index: index + 1, // Replacing Id with #
   }));
 
   return (
@@ -97,9 +96,28 @@ const AllCustomers = () => {
         visible={deleteModalVisible}
         setVisible={setDeleteModalVisible}
         onYes={onDelete}
-        resource={'Delete customer - ' + deleteCustomer?.name}
+        resource={`Delete customer - ${deleteCustomer?.name}`}
       />
-      <MantineReactTable enableColumnResizing columns={columns} data={data} enableFullScreenToggle={false}/>
+      <MantineReactTable
+        columns={columns}
+        data={data}
+        enableFullScreenToggle={false}
+        enableColumnResizing
+        defaultColumn={{
+          size: 80, // Default column width for compact cells
+          Cell: ({ cell }) => (
+            <div style={{ fontSize: '10px', padding: '2px' }}>
+              {cell.getValue()}
+            </div>
+          ),
+        }}
+        muiTableBodyCellProps={{
+          style: { padding: '2px', fontSize: '10px' },
+        }}
+        muiTableHeadCellProps={{
+          style: { padding: '4px', fontSize: '11px' },
+        }}
+      />
     </CRow>
   );
 };

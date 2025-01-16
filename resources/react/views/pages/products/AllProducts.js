@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CBadge, CCard, CCardBody, CCardHeader, CCol, CRow, CButton } from '@coreui/react';
+import { CBadge, CCol, CRow } from '@coreui/react';
 import { MantineReactTable } from 'mantine-react-table';
 import { deleteAPICall, getAPICall } from '../../../util/api';
 import ConfirmationModal from '../../common/ConfirmationModal';
@@ -18,7 +18,7 @@ const AllProducts = () => {
       const response = await getAPICall('/api/product');
       setProducts(response);
     } catch (error) {
-      showToast('danger', 'Error occured ' + error);
+      showToast('danger', 'Error occurred: ' + error.message);
     }
   };
 
@@ -33,23 +33,21 @@ const AllProducts = () => {
 
   const onDelete = async () => {
     try {
-      await deleteAPICall('/api/product/' + deleteProduct.id);
+      await deleteAPICall(`/api/product/${deleteProduct.id}`);
       setDeleteModalVisible(false);
       fetchProducts();
     } catch (error) {
-      showToast('danger', 'Error occured ' + error);
+      showToast('danger', 'Error occurred: ' + error.message);
     }
   };
 
   const handleEdit = (p) => {
-    navigate('/products/edit/' + p.id);
+    navigate(`/products/edit/${p.id}`);
   };
 
-
   const columns = [
-    { accessorKey: 'index', header: 'Id' },
+    
     { accessorKey: 'name', header: 'Name' },
-    { accessorKey: 'localName', header: 'Local Name' },
     {
       accessorKey: 'basePrice',
       header: 'Base Price',
@@ -69,7 +67,7 @@ const AllProducts = () => {
       accessorKey: 'status',
       header: 'Status',
       Cell: ({ cell }) => (
-        cell.row.original.show == 1 ? (
+        cell.row.original.show === 1 ? (
           <CBadge color="success">Visible</CBadge>
         ) : (
           <CBadge color="danger">Hidden</CBadge>
@@ -80,18 +78,19 @@ const AllProducts = () => {
       accessorKey: 'actions',
       header: 'Actions',
       Cell: ({ cell }) => (
-        <div>
+        <div className="d-flex flex-wrap">
           <CBadge
             role="button"
             color="info"
+            className="me-2 mb-2"
             onClick={() => handleEdit(cell.row.original)}
           >
             Edit
           </CBadge>
-          &nbsp;
           <CBadge
             role="button"
             color="danger"
+            className="mb-2"
             onClick={() => handleDelete(cell.row.original)}
           >
             Delete
@@ -103,7 +102,7 @@ const AllProducts = () => {
 
   const data = products.map((p, index) => ({
     ...p,
-    index: index + 1,
+    index: index + 1, // Replacing Id with #
   }));
 
   return (
@@ -112,9 +111,29 @@ const AllProducts = () => {
         visible={deleteModalVisible}
         setVisible={setDeleteModalVisible}
         onYes={onDelete}
-        resource={'Delete product - ' + deleteProduct?.name}
+        resource={`Delete product - ${deleteProduct?.name}`}
       />
-      <MantineReactTable columns={columns} data={data} enableFullScreenToggle={false}/>
+      <CCol xs={12}>
+        <MantineReactTable
+          columns={columns}
+          data={data}
+          enableFullScreenToggle={false}
+          enableColumnResizing
+          enableStickyHeader
+          enableRowNumbers={false}
+          defaultColumn={{
+            size: 110, // Reduce default column width for smaller cells
+            Cell: ({ cell }) => (
+              <div style={{ fontSize: '12px', padding: '5px' }}>
+                {cell.getValue()}
+              </div>
+            ),
+          }}
+          muiTableBodyCellProps={{
+            style: { padding: '5px', fontSize: '12px' }, // Smaller padding and font size for rows
+          }}
+        />
+      </CCol>
     </CRow>
   );
 };

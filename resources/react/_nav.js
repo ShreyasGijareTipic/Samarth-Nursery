@@ -495,12 +495,12 @@ export default function fetchNavItems(t1){
       //   to: '/booking',
       //   icon: <CIcon icon={cilBookmark} customClassName="nav-icon" />,
       // },
-      {
-       component: CNavItem,
-       name: t("LABELS.all_customers"),
-        to: '/customer/all',
-        icon: <CIcon icon={cilUser} customClassName="nav-icon" />,
-      },
+      // {
+      //  component: CNavItem,
+      //  name: t("LABELS.all_customers"),
+      //   to: '/customer/all',
+      //   icon: <CIcon icon={cilUser} customClassName="nav-icon" />,
+      // },
       
       
     ]

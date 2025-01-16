@@ -15,13 +15,18 @@ use App\Http\Controllers\FileUpload;
 use App\Http\Controllers\CustomerController;
 use App\Http\Middleware\Authorization;
 use App\Http\Controllers\CompanyInfoController;
+use App\Http\Controllers\WhatsAppController;
 use App\Http\Controllers\PaymentTrackerController; // Added controller
 
 // ini_set('display_errors', 1);
 // ini_set('display_startup_errors', 1);
 // error_reporting(E_ALL);
-
-
+Route::post('/sendBill', [WhatsAppController::class, 'sendBill']);
+ 
+Route::post('/whatsapp/receiveMessage', [WhatsAppController::class, 'receiveMessage']);
+Route::post('/whatsapp/incomingMessage', [WhatsAppController::class, 'incomingMessage']);
+ 
+ 
 //public API's
 Route::post('/register',[AuthController::class, 'register']);
 Route::post('/login',[AuthController::class, 'login']);

@@ -14,6 +14,7 @@ const Booking = React.lazy(() => import('./views/pages/invoice/Booking'))
 const Orders = React.lazy(() => import('./views/pages/invoice/Orders'))
 const InvoiceDetails = React.lazy(() => import('./views/pages/invoice/InvoiceDetails'))
 const NewCompany = React.lazy(() => import('./views/pages/company/NewCompany'))
+const EditCompany = React.lazy(() => import('./views/pages/company/EditCompany'))
 const AllCompanies = React.lazy(() => import('./views/pages/company/AllCompanies'))
 
 
@@ -76,6 +77,7 @@ export default function fetchRoutes(){
       { path: '/newCustomer', name: 'New Customer', element: Delivery },
       { path: '/company/new', name: 'New Company', element: NewCompany },
       { path: '/company/all', name: 'All Companies', element: AllCompanies },
+      { path: '/company/edit/:companyId', name: 'Edit Company', element: EditCompany },
       { path: '/invoice-details/:id', name: 'InvoiceDetails', element: InvoiceDetails },
       { path: '/bookings', name: 'Advance Bookings', element: Orders },
       { path: '/regular', name: 'Regular Orders', element: Orders },
@@ -84,7 +86,7 @@ export default function fetchRoutes(){
       { path: '/products/all', name: 'All Products', element: AllProducts },
       { path: '/products/edit/:id', name: 'Edit Products', element: EditProduct },
       { path: '/customer/new', name: 'New Product', element: NewCustomer },
-      { path: '/customer/all', name: 'All Products', element: AllCustomers },
+      { path: '/customer/all', name: 'All Customers', element: AllCustomers },
       { path: '/customer/edit/:id', name: 'Edit Products', element: EditCustomer },
       // { path: '/category/new', name: 'New Category', element: NewCategory },
       // { path: '/category/all', name: 'All Category', element: AllCategory },
@@ -125,7 +127,7 @@ export default function fetchRoutes(){
     { path: '/regular', name: 'Regular Orders', element: Orders },
     { path: '/order', name: 'All Orders', element: Orders },
     { path: '/customer/new', name: 'New Product', element: NewCustomer },
-    { path: '/customer/all', name: 'All Products', element: AllCustomers },
+    { path: '/customer/all', name: 'All Customers', element: AllCustomers },
     { path: '/customer/edit/:id', name: 'Edit Customer', element: EditCustomer },
     { path: '/products/new', name: 'New Product', element: NewProduct },
     { path: '/products/all', name: 'All Products', element: AllProducts },
@@ -164,7 +166,7 @@ export default function fetchRoutes(){
     { path: '/regular', name: 'Regular Orders', element: Orders },
     { path: '/order', name: 'All Orders', element: Orders },
     { path: '/customer/new', name: 'New Product', element: NewCustomer },
-    { path: '/customer/all', name: 'All Products', element: AllCustomers },
+    { path: '/customer/all', name: 'All Customers', element: AllCustomers },
     { path: '/customer/edit/:id', name: 'Edit Customer', element: EditCustomer },
     { path:'/updatepassword', name: 'Update Password', element: Updatepassword },
     

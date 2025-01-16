@@ -32,6 +32,7 @@ const Invoice = () => {
   const [allProducts, setAllProducts] = useState()
   const [customerHistory, setCustomerHistory] = useState()
   const [showCustomerModal, setShowCustomerModal] = useState(false)
+  
   const navigate = useNavigate()
   const { showSpinner, hideSpinner } = useSpinner();
   const timeNow = ()=> `${new Date().getHours()}:${new Date().getMinutes().toString().padStart(2, '0')}`;
@@ -289,21 +290,24 @@ const Invoice = () => {
 
   const handleSubmit = async (event) => {
     try {
-      event.preventDefault();
-      event.stopPropagation();
+      event.preventDefault(); // Prevent the default form submission
+      event.stopPropagation(); // Stop the event from bubbling up
   
-      // Validation
+      // Validation flag
       let isInvalid = false;
   
-      // Determine the correct order status based on invoice type
-      const orderStatus = state.invoiceType === 1 ? 1 : 2;
+      const orderStatus = state.invoiceType === 1 ? 1 : 2; // Set the order status based on the invoice type
   
-      // Prepare the data for submission
+      // Calculate remaining balance
+      const remainingBalance = state.finalAmount - state.paidAmount;
+  
+      // Prepare the data for submission (cloned state)
       const clonedState = {
         ...state,
         orderStatus,
-        finalAmount: state.totalAmount, // Ensure the finalAmount is aligned with totalAmount
-        deliveryTime: timeNow(), // Update delivery time
+         // Ensure the finalAmount matches totalAmount
+        deliveryTime: timeNow(), // Set the current delivery time
+        remainingBalance, // Add the calculated remaining balance to the data
       };
   
       // Validate required fields
@@ -312,7 +316,7 @@ const Invoice = () => {
         showToast('warning', 'Please select or add a customer.');
       }
   
-      // Check for valid paid amount for Online/UPI payments
+      // Check if the paid amount is valid for online/UPI payments
       if (clonedState.paymentType === 1 && clonedState.paidAmount <= 0) {
         isInvalid = true;
         showToast('warning', 'For online/UPI payment, paid amount must be greater than zero.');
@@ -326,38 +330,39 @@ const Invoice = () => {
   
       // Submit if no validation errors
       if (!isInvalid) {
-        showSpinner();
-        const res = await post('/api/order', clonedState);
+        showSpinner(); // Show a loading spinner
+        const res = await post('/api/order', clonedState); // Submit the order data to the API
   
         if (res) {
-          handleClear();
+          handleClear(); // Clear the form
   
           if (res.id) {
-            const toastMessage =
-              orderStatus === 1
-                ? 'Order is delivered.'
-                : 'Order is created as pending (Advanced Booking).';
+            // Success: Display appropriate success message based on order status
+            const toastMessage = orderStatus === 1
+              ? 'Order is delivered.'
+              : 'Order is created as pending (Advanced Booking).';
             showToast('success', toastMessage);
   
-            // If online payment, you can show QR or perform other actions
+            // If payment is online, you can show QR or perform other related actions
             if (clonedState.paymentType === 1) {
-              setShowQR(true); // Show QR for Online/UPI payment
+              setShowQR(true); // Show QR code for online payment
             }
   
-            navigate('/invoice-details/' + res.id);
+            navigate('/invoice-details/' + res.id); // Navigate to the invoice details page
           } else {
             showToast('danger', 'Error occurred while processing the order.');
           }
         }
       } else {
-        setValidated(true);
+        setValidated(true); // Mark the form as validated if there were errors
       }
     } catch (error) {
       showToast('danger', 'Error while placing the order.');
     } finally {
-      hideSpinner();
+      hideSpinner(); // Hide the loading spinner
     }
   };
+  
   
   const handleClear = async () => {
     setState({
@@ -541,79 +546,79 @@ const Invoice = () => {
                 </div>
               </div>
                         {/* Desktop Layout (Table Format) */}
-<div className="d-none d-md-block">
-  <div className="row">
-    <div className="col-4">
-      <b>{t('invoice.product')}</b>
-    </div>
-    <div className="col-2">
-      <b>{t('invoice.price')}</b>
-    </div>
-    <div className="col-2">
-      <b>{t('invoice.quantity')}</b>
-    </div>
-    <div className="col-2">
-      <b>{t('invoice.total')}</b>
-    </div>
-    <div className="col-2">
-      <b>{t('invoice.action')}</b>
-    </div>
-  </div>
+          <div className="d-none d-md-block">
+            <div className="row">
+              <div className="col-4">
+                <b>{t('invoice.product')}</b>
+              </div>
+              <div className="col-2">
+                <b>{t('invoice.price')}</b>
+              </div>
+              <div className="col-2">
+                <b>{t('invoice.quantity')}</b>
+              </div>
+              <div className="col-2">
+                <b>{t('invoice.action')}</b>
+              </div>
+            </div>
 
-  {state.items?.map((oitem, index) => (
-    <div key={index} className="bg-light rounded p-3 my-2">
-      <div className="row align-items-center">
-        <div className="col-4">
-          <CFormSelect
-            aria-label={t('invoice.select_product')}
-            value={oitem.product_id}
-            options={products}
-            onChange={() => handleProductChange(event, index)}
-            invalid={oitem.notSelected == true}
-            required
-            feedbackInvalid={t('invoice.select_product')}
-          />
-        </div>
-        <div className="col-2">
-          <p>{oitem.dPrice + (oitem.unit ? ' / ' + oitem.unit : '')}</p>
-        </div>
-        <div className="col-2">
-          <CFormInput
-            type="number"
-            value={oitem.dQty}
-            invalid={oitem.invalidQty == true}
-            required
-            feedbackInvalid={`${t('invoice.max')} ${oitem.stockQty}`}
-            onChange={() => handleQtyChange(event, index)}
-          />
-        </div>
-        <div className="col-2">
-          <p>{oitem.total_price}</p>
-        </div>
-        <div className="col-2 d-flex">
-          {state.items.length > 1 && (
-            <CButton color="" onClick={() => handleRemoveProductRow(index)}>
-              <CIcon icon={cilDelete} size="xl" style={{ '--ci-primary-color': 'red' }} />
-            </CButton>
-          )}
-          {index === state.items.length - 1 && (
-            <CButton onClick={handleAddProductRow} color="">
-              <CIcon icon={cilPlus} size="xl" style={{ '--ci-primary-color': 'green' }} />
-            </CButton>
-          )}
-        </div>
-      </div>
-    </div>
-  ))}
-</div>
+              {state.items?.map((oitem, index) => (
+                <div key={index} className="bg-light rounded p-3 my-2">
+                  <div className="row align-items-center">
+                    <div className="col-4">
+                      <CFormSelect
+                        aria-label={t('invoice.select_product')}
+                        value={oitem.product_id}
+                        options={products}
+                        onChange={() => handleProductChange(event, index)}
+                        invalid={oitem.notSelected == true}
+                        required
+                        feedbackInvalid={t('invoice.select_product')}
+                      />
+                    </div>
+                    <div className="col-2">
+                      <p>{oitem.dPrice + (oitem.unit ? ' / ' + oitem.unit : '')}</p>
+                    </div>
+                    <div className="col-2">
+                      <CFormInput
+                        type="number"
+                        value={oitem.dQty}
+                        invalid={oitem.invalidQty == true}
+                        required
+                        feedbackInvalid={`${t('invoice.max')} ${oitem.stockQty}`}
+                        onChange={() => handleQtyChange(event, index)}
+                      />
+                    </div>
+                    <div className="col-2">
+                      <p>{oitem.total_price}</p>
+                    </div>
+                    <div className="col-2 d-flex">
+                      {state.items.length > 1 && (
+                        <CButton color="" onClick={() => handleRemoveProductRow(index)}>
+                          <CIcon icon={cilDelete} size="xl" style={{ '--ci-primary-color': 'red' }} />
+                        </CButton>
+                      )}
+                      {index === state.items.length - 1 && (
+                        <CButton onClick={handleAddProductRow} color="">
+                          <CIcon icon={cilPlus} size="xl" style={{ '--ci-primary-color': 'green' }} />
+                        </CButton>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
 
 {/* Mobile Layout (Stacked Format) */}
 <div className="d-block d-md-none">
   {state.items?.map((oitem, index) => (
-    <div key={index} className="bg-light rounded p-3 my-3">
+    <div
+      key={index}
+      className="bg-light rounded p-3 my-3 d-flex flex-column gap-3"
+    >
       {/* Product Field */}
-      <div className="mb-2">
-        <label className="font-weight-bold">{t('invoice.product')}</label>
+      <div className="d-flex align-items-center">
+        <label className="font-weight-bold me-2">{t('invoice.product')}:</label>
         <CFormSelect
           aria-label={t('invoice.select_product')}
           value={oitem.product_id}
@@ -622,42 +627,43 @@ const Invoice = () => {
           invalid={oitem.notSelected == true}
           required
           feedbackInvalid={t('invoice.select_product')}
+          className="me-2"
+          style={{ minWidth: '100px' }}
         />
       </div>
 
-      {/* Price Field */}
-      <div className="mb-2">
-        <label className="font-weight-bold">{t('invoice.price')}</label>
-        <p>{oitem.dPrice + (oitem.unit ? ' / ' + oitem.unit : '')}</p>
-      </div>
-
-      {/* Quantity Field */}
-      <div className="mb-2">
-        <label className="font-weight-bold">{t('invoice.quantity')}</label>
-        <CFormInput
-          type="number"
-          value={oitem.dQty}
-          invalid={oitem.invalidQty == true}
-          required
-          feedbackInvalid={`${t('invoice.max')} ${oitem.stockQty}`}
-          onChange={() => handleQtyChange(event, index)}
-        />
-      </div>
-
-      {/* Total and Actions */}
-      <div className="row align-items-center">
-        <div className="col-6">
-          <label className="font-weight-bold">{t('invoice.total')}</label>
-          <p>{oitem.total_price}</p>
+      {/* Price, Quantity, and Actions on the Second Line */}
+      <div className="d-flex justify-content-between align-items-center">
+        {/* Price Field */}
+        <div className="d-flex align-items-center ">
+          <label className="font-weight-bold me-2">{t('invoice.price')}:</label>
+          <p className='mt-3'>{oitem.dPrice + (oitem.unit ? ' / ' + oitem.unit : '')}</p>
         </div>
-        <div className="col-6 d-flex justify-content-start">
+
+        {/* Quantity Field */}
+        <div className="d-flex align-items-center">
+          <label className="font-weight-bold me-2" style={{ marginLeft: '10px' }}>{t('invoice.quantity')}:</label>
+          <CFormInput
+            type="number"
+            value={oitem.dQty}
+            invalid={oitem.invalidQty == true}
+            required
+            feedbackInvalid={`${t('invoice.max')} ${oitem.stockQty}`}
+            onChange={() => handleQtyChange(event, index)}
+            className="me-3"
+            style={{ maxWidth: '100px' }}
+          />
+        </div>
+
+        {/* Actions */}
+        <div className="d-flex">
           {state.items.length > 1 && (
-            <CButton color="" onClick={() => handleRemoveProductRow(index)}>
+            <CButton color="" onClick={() => handleRemoveProductRow(index)} className="me-2 ml-1">
               <CIcon icon={cilDelete} size="xl" style={{ '--ci-primary-color': 'red' }} />
             </CButton>
           )}
           {index === state.items.length - 1 && (
-            <CButton onClick={handleAddProductRow} color="">
+            <CButton onClick={handleAddProductRow} color="" className="ml-1">
               <CIcon icon={cilPlus} size="xl" style={{ '--ci-primary-color': 'green' }} />
             </CButton>
           )}
@@ -666,7 +672,6 @@ const Invoice = () => {
     </div>
   ))}
 </div>
-
 
 
             {/* Total Amount Section (Desktop) */}

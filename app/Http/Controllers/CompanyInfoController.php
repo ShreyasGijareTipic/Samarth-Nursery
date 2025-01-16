@@ -70,19 +70,55 @@ class CompanyInfoController extends Controller
         return CompanyInfo::where('company_id', $id)->firstOrFail();
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, $id)
-    {
-        $companyInfo = CompanyInfo::where('company_id', $id)->firstOrFail();
-        $companyInfo->update($request->all());
-        return $companyInfo;
+{
+    $companyInfo = CompanyInfo::where('company_id', $id)->firstOrFail();
+
+    $validatedData = $request->validate([
+        'land_mark' => 'required|string|max:255',
+        'companyName' => 'required|string|max:255',
+        'Tal' => 'required|string|max:255',
+        'Dist' => 'required|string|max:255',
+        'pincode' => 'required|integer',
+        'phone_no' => 'required|string|max:15',
+        'bank_name' => 'required|string|max:255',
+        'account_no' => 'required|string|max:255',
+        'IFSC_code' => 'required|string|max:255',
+        'logo' => 'nullable|string',
+        'sign' => 'nullable|string',
+        'paymentQRCode' => 'nullable|string',
+        'appMode' => 'required|string',
+    ]);
+
+    // Update fields
+    $companyInfo->company_name = $request->input('companyName');
+    $companyInfo->land_mark = $request->input('land_mark');
+    $companyInfo->tal = $request->input('Tal');
+    $companyInfo->dist = $request->input('Dist');
+    $companyInfo->pincode = $request->input('pincode');
+    $companyInfo->phone_no = $request->input('phone_no');
+    $companyInfo->bank_name = $request->input('bank_name');
+    $companyInfo->account_no = $request->input('account_no');
+    $companyInfo->ifsc_code = $request->input('IFSC_code');
+
+    // Optionally handle file updates
+    if ($request->has('logo')) {
+        $companyInfo->logo = $request->input('logo');
     }
+    if ($request->has('sign')) {
+        $companyInfo->sign = $request->input('sign');
+    }
+    if ($request->has('paymentQRCode')) {
+        $companyInfo->paymentQRCode = $request->input('paymentQRCode');
+    }
+
+    $companyInfo->appMode = $request->input('appMode');
+
+    $companyInfo->save();
+
+    return response()->json(['message' => 'Company details updated successfully'], 200);
+}
+
 
     /**
      * Remove the specified resource from storage.

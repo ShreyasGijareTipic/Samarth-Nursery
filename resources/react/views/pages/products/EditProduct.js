@@ -150,7 +150,7 @@ const EditProduct = () => {
               </div>
               <div className="row mb-2">
                 <div className="col-4">
-                  <CFormLabel htmlFor="qty">Product Quantity</CFormLabel>
+                  <CFormLabel htmlFor="qty">Product Qty.</CFormLabel>
                   <CFormInput
                     type="number"
                     id="qty"
@@ -214,7 +214,7 @@ const EditProduct = () => {
                   />
                 </div> */}
               </div>
-              <div className="row mb-2">
+              {/* <div className="row mb-2">
                 <div className="col-sm-3">
                   <CFormCheck
                     id="showOnHome"
@@ -235,7 +235,7 @@ const EditProduct = () => {
                       onChange={handleChange}
                     />
                 </div>
-              </div>
+              </div> */}
               <div className="mb-3">
                 <CButton color="success" onClick={handleSubmit}>
                   Update

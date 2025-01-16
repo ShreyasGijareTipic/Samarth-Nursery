@@ -49,96 +49,86 @@ class OrderController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
-    {
-        $user = Auth::user();
-        $profit = 0;
-        foreach($request->items as $item){
-            $profit += $item['total_price'] - (($item['dQty'] ?? 0) * ($item['bPrice'] ?? 0));
-        }
-        // Create order
-        $order = Order::create(
-            array_merge(
-                $request->all(),
-                [
-                    'profit' => $profit,
-                    'company_id' => $user->company_id,
-                    'created_by' => $user->id,
-                    'updated_by' => $user->id,
-                ]
-            )
-        );
-        // Insert all items in Order details
-        foreach($request->items as $item){
-            $od = new OrderDetail;
-            $od->product_id = $item['id'];
-            $od->product_name = $item['name'];
-            $od->product_local_name = $item['localName'];
-            $od->product_unit = $item['unit'];
-            $od->product_sizes_id = $item['product_sizes_id'];
-            $od->size_name = $item['size_name'];
-            $od->size_local_name = $item['size_local_name'];
-            $od->dQty = $item['dQty'] ?? 0;
-            $od->eQty = $item['eQty'] ?? 0;
-            $od->oPrice = $item['oPrice'];
-            $od->dPrice = $item['dPrice'];
-            $od->total_price = $item['total_price'] ?? 0;
-            $order->items()->save($od);
-            //update stock of products
-            if($request->orderStatus == 1){
-                $productSize = ProductSize::find($item['product_sizes_id']);
-                if($productSize){
-                    $changeStockQty =  ($item['eQty'] ?? 0) - ($item['dQty'] ?? 0);
-                    $productSize->update(['stock'=> $productSize->stock + $changeStockQty]);
-                }
-                //is product returnable
-                
-                //update jar tracker
-                // if($returnable){
-                //     $returnQty = ($item['dQty'] ?? 0) - ($item['eQty'] ?? 0);
-                //     $jarTracker = JarTracker::where('customer_id', $request['customer_id'])->where('product_sizes_id', $item['product_sizes_id'])->first();
-                //     if($jarTracker){
-                //         $jarTracker->quantity += $returnQty;
-                //         $jarTracker->save();
-                //     }else{
-                //         JarTracker::create([
-                //             'product_name' => $item['name'],
-                //             'product_sizes_id' => $item['product_sizes_id'],
-                //             'product_local_name' => $item['localName'],
-                //             'customer_id' => $request['customer_id'],
-                //             'quantity' => $returnQty,
-                //             'created_by' => $user->id,
-                //             'updated_by' => $user->id,
-                //             ]);
-                //     }
-                // }
-            }
-            //update booked stock of products
-            if($order->orderStatus == 2){
-                $productSize = ProductSize::find($item['product_sizes_id']);
-                if($productSize){
-                    $changeStockQty =  ($item['dQty'] ?? 0);
-                    $productSize->update(['booked'=> $productSize->booked + $changeStockQty]);
-                }
-            }
-        }
+{
+    $user = Auth::user();
+    $profit = 0;
 
-        $paymentDetails = PaymentTracker::firstOrNew(array('customer_id' => $request->customer_id));
-        //Update balance amount of customer
-        if($request->orderStatus == 1){
-            //Delivery
-            $balanceAmount = $request->totalAmount - $request->paidAmount;
-            $paymentDetails->created_by = $user->id;
-            $paymentDetails->updated_by = $user->id;
-            $paymentDetails->amount -= $balanceAmount;
-        
-        }
-        if($request->orderStatus !== 1 && $request->paidAmount > 0){
-            $paymentDetails->amount += $request->paidAmount;
-        }
-        $paymentDetails->save();
-        $order->items = $order->items()->get();
-        return $order;
+    // Calculate profit based on items
+    foreach($request->items as $item){
+        $profit += $item['total_price'] - (($item['dQty'] ?? 0) * ($item['bPrice'] ?? 0));
     }
+
+    // Create order
+    $order = Order::create(
+        array_merge(
+            $request->all(),
+            [
+                'profit' => $profit,
+                'company_id' => $user->company_id,
+                'created_by' => $user->id,
+                'updated_by' => $user->id,
+            ]
+        )
+    );
+
+    // Insert all items in Order details
+    foreach($request->items as $item){
+        $od = new OrderDetail;
+        $od->product_id = $item['id'];
+        $od->product_name = $item['name'];
+        $od->product_local_name = $item['localName'];
+        $od->product_unit = $item['unit'];
+        $od->product_sizes_id = $item['product_sizes_id'];
+        $od->size_name = $item['size_name'];
+        $od->size_local_name = $item['size_local_name'];
+        $od->dQty = $item['dQty'] ?? 0;
+        $od->eQty = $item['eQty'] ?? 0;
+        $od->oPrice = $item['oPrice'];
+        $od->dPrice = $item['dPrice'];
+        $od->total_price = $item['total_price'] ?? 0;
+        $order->items()->save($od);
+
+        // Update stock of products on delivery
+        if($request->orderStatus == 1){
+            $productSize = ProductSize::find($item['product_sizes_id']);
+            if($productSize){
+                $changeStockQty =  ($item['eQty'] ?? 0) - ($item['dQty'] ?? 0);
+                $productSize->update(['stock'=> $productSize->stock + $changeStockQty]);
+            }
+        }
+        
+        // Update booked stock of products
+        if($order->orderStatus == 2){
+            $productSize = ProductSize::find($item['product_sizes_id']);
+            if($productSize){
+                $changeStockQty =  ($item['dQty'] ?? 0);
+                $productSize->update(['booked'=> $productSize->booked + $changeStockQty]);
+            }
+        }
+    }
+
+    // Calculate balance amount
+    $balanceAmount = $request->finalAmount - $request->paidAmount;
+
+    // Update the PaymentTracker
+    $paymentDetails = PaymentTracker::firstOrNew(array('customer_id' => $request->customer_id));
+    if ($request->orderStatus == 1) { // Delivery
+        $paymentDetails->created_by = $user->id;
+        $paymentDetails->updated_by = $user->id;
+        $paymentDetails->amount -= $balanceAmount;  // Deduct balance amount on delivery
+    }
+
+    if ($request->orderStatus !== 1 && $request->paidAmount > 0) {
+        $paymentDetails->amount += $request->paidAmount;  // Add paid amount for other statuses
+    }
+
+    $paymentDetails->save();
+
+    // Fetch and return the updated order with items
+    $order->items = $order->items()->get();
+    return $order;
+}
+
 
     /**
      * Display the specified resource.

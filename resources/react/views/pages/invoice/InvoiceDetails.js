@@ -122,6 +122,35 @@ const InvoiceDetails = () => {
     fetchOrder();
   }, [param.id]);
 
+  const handleSendWhatsApp = async () => {
+    try {
+      // Convert the generated PDF file to a Blob or use an existing file.
+      const pdfBlob = await generateEnglishPDF(
+        grandTotal,
+        formData.InvoiceNumber,
+        formData.customer.name,
+        formData,
+        remainingAmount,
+        totalAmountWords
+      );
+  
+      // Prepare form data for the API call
+      const formDataToSend = new FormData();
+      formDataToSend.append("phone_number", formData.customer.mobile); // Customer's mobile number
+      formDataToSend.append("bill_file", new File([pdfBlob], "invoice.pdf", { type: "application/pdf" })); // Attach the generated PDF
+  
+      // Send the file and phone number via API
+      const response = await postFormData("/api/sendBill", formDataToSend);
+  
+      showToast("success", "WhatsApp message sent successfully!");
+      console.log("WhatsApp message sent successfully:", response.data);
+    } catch (error) {
+      showToast("danger", "Failed to send the bill via WhatsApp.");
+      console.error("Error sending WhatsApp:", error);
+    }
+  };
+  
+
   const handleDownload = (language) => {
     const invoiceNo = formData.InvoiceNumber;
     const isMarathi = language === 'marathi';
@@ -294,9 +323,13 @@ const InvoiceDetails = () => {
           </div>
 
           <div className='d-flex justify-content-center'>
-            <CButton color="primary" variant="outline" onClick={handlePrint} className='d-print-none me-2'>Print</CButton>
-            <CButton color="success" variant="outline" onClick={() => handleDownload('marathi')} className='d-print-none me-2'>Download (Marathi)</CButton>
-            <CButton color="success" variant="outline" onClick={() => handleDownload('english')} className='d-print-none'>Download (English)</CButton>
+          <div className="d-flex justify-content-center">
+          <CButton color="primary" variant="outline" onClick={handlePrint} className="d-print-none me-2">Print</CButton>
+          <CButton color="success" variant="outline" onClick={() => handleDownload('marathi')} className="d-print-none me-2">Download (Marathi)</CButton>
+          <CButton color="success" variant="outline" onClick={() => handleDownload('english')} className="d-print-none me-2">Download (English)</CButton>
+          <CButton color="info" variant="outline" onClick={handleSendWhatsApp} className="d-print-none">Send to WhatsApp</CButton>
+        </div>
+
           </div>
         </CContainer>
       </CCardBody>
