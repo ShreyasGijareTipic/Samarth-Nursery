@@ -36,10 +36,15 @@ const CustomerReport = () => {
   const lng = i18n.language;
   const [state, setState] = useState({
     name: '',
-    customer_id:'',
+    customer_id: '',
     start_date: '',
     end_date: '',
-  })
+    customer: {
+        name: '',
+        address: '',
+        mobile: '',
+    }
+});
   const [suggestions, setSuggestions] = useState([]);
 
 
@@ -336,12 +341,8 @@ const CustomerReport = () => {
                             </tbody>
                           </table> : 'Only cash collected'}
                         </CTableDataCell>
-                        <CTableDataCell>
-                              {p.totalPaid > 0 ? <CBadge color="success">{p.totalPaid.toFixed(2)}</CBadge> : 0}
-                            </CTableDataCell>
-                            <CTableDataCell>
-                              {p.totalUnpaid > 0 ? <CBadge color="danger">{p.totalUnpaid.toFixed(2)}</CBadge> : 0}
-                            </CTableDataCell>
+                        <CTableDataCell>{p.totalPaid > 0 ? <CBadge color="success">{p.totalPaid}</CBadge> : 0}</CTableDataCell>
+                        <CTableDataCell>{p.totalUnpaid > 0 ? <CBadge color="danger">{p.totalUnpaid}</CBadge> : 0}</CTableDataCell>
                         <CTableDataCell>{p.grandTotal}</CTableDataCell>
                       </CTableRow>
                       {expandedRows[p.customer.name] && (

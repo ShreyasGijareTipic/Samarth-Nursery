@@ -276,6 +276,28 @@ const Invoice = () => {
     }
   }
 
+  const handlePriceChange = (e, index) => {
+    const { value } = e.target;
+    setState((prev) => {
+      const old = { ...prev };
+  
+      // Update the price, allowing empty values during editing
+      old.items[index].dPrice = value === '' ? '' : parseFloat(value);
+  
+      // Recalculate total price for the item
+      old.items[index].total_price =
+        (parseFloat(value) || 0) * (old.items[index].dQty || 0);
+  
+      // Recalculate overall totals
+      old.totalAmount = calculateTotal(old.items);
+      calculateFinalAmount(old);
+  
+      return { ...old };
+    });
+  };
+  
+
+
   const handleQtyChange = (e, index) => {
     const { value } = e.target
     setState((prev) => {
@@ -367,8 +389,8 @@ const Invoice = () => {
   const handleClear = async () => {
     setState({
       customer_id: 0,
-      lat:'',
-      long:'',
+      lat: '',
+      long: '',
       payLater: false,
       isSettled: false,
       invoiceDate: new Date().toISOString().split('T')[0],
@@ -377,7 +399,7 @@ const Invoice = () => {
       invoiceType: 1,
       items: [
         {
-          product_id: undefined,
+          product_id: 0,
           product_sizes_id: 0,
           product_name: '',
           product_unit: '',
@@ -387,8 +409,11 @@ const Invoice = () => {
           oPrice: 0,
           dPrice: 0,
           bPrice: 0,
-          qty: null,
+          qty: '',
+          dQty: '',
+          eQty: '',
           total_price: 0,
+          returnable: 0,
         },
       ],
       totalAmount: 0,
@@ -396,9 +421,11 @@ const Invoice = () => {
       balanceAmount: 0,
       paidAmount: 0,
       finalAmount: 0,
-      paymentType: 1,
-    })
-  }
+      paymentType: 0,
+    });
+  };
+  
+  
   return (
     <CRow>
       <NewCustomerModal hint={customerName.name} onSuccess={onCustomerAdded} visible={showCustomerModal} setVisible={setShowCustomerModal} />
@@ -577,8 +604,14 @@ const Invoice = () => {
                       />
                     </div>
                     <div className="col-2">
-                      <p>{oitem.dPrice + (oitem.unit ? ' / ' + oitem.unit : '')}</p>
+                      <CFormInput
+                        type="number"
+                        value={oitem.dPrice || ''}
+                        onChange={(e) => handlePriceChange(e, index)}
+                        required
+                      />
                     </div>
+
                     <div className="col-2">
                       <CFormInput
                         type="number"
@@ -589,9 +622,7 @@ const Invoice = () => {
                         onChange={() => handleQtyChange(event, index)}
                       />
                     </div>
-                    <div className="col-2">
-                      <p>{oitem.total_price}</p>
-                    </div>
+                    
                     <div className="col-2 d-flex">
                       {state.items.length > 1 && (
                         <CButton color="" onClick={() => handleRemoveProductRow(index)}>
@@ -636,13 +667,20 @@ const Invoice = () => {
       <div className="d-flex justify-content-between align-items-center">
         {/* Price Field */}
         <div className="d-flex align-items-center ">
-          <label className="font-weight-bold me-2">{t('invoice.price')}:</label>
-          <p className='mt-3'>{oitem.dPrice + (oitem.unit ? ' / ' + oitem.unit : '')}</p>
-        </div>
+            <label className="font-weight-bold me-2">{t('invoice.price')}:</label>
+            <CFormInput
+              type="number"
+              value={oitem.dPrice || ''}
+              onChange={(e) => handlePriceChange(e, index)}
+              required
+              className="mt-1"
+              style={{ maxWidth: '123px' }}
+            />
+          </div>
 
         {/* Quantity Field */}
         <div className="d-flex align-items-center">
-          <label className="font-weight-bold me-2" style={{ marginLeft: '10px' }}>{t('invoice.quantity')}:</label>
+          <label className="font-weight-bold me-2" style={{ marginLeft: '5px' }}>{t('invoice.quantity')}:</label>
           <CFormInput
             type="number"
             value={oitem.dQty}
@@ -650,21 +688,21 @@ const Invoice = () => {
             required
             feedbackInvalid={`${t('invoice.max')} ${oitem.stockQty}`}
             onChange={() => handleQtyChange(event, index)}
-            className="me-3"
-            style={{ maxWidth: '100px' }}
+            className="me-1"
+            style={{ maxWidth: '123px' }}
           />
         </div>
 
         {/* Actions */}
         <div className="d-flex">
           {state.items.length > 1 && (
-            <CButton color="" onClick={() => handleRemoveProductRow(index)} className="me-2 ml-1">
-              <CIcon icon={cilDelete} size="xl" style={{ '--ci-primary-color': 'red' }} />
+            <CButton color="" onClick={() => handleRemoveProductRow(index)} className="">
+              <CIcon icon={cilDelete} size="m" style={{ '--ci-primary-color': 'red' }} />
             </CButton>
           )}
           {index === state.items.length - 1 && (
-            <CButton onClick={handleAddProductRow} color="" className="ml-1">
-              <CIcon icon={cilPlus} size="xl" style={{ '--ci-primary-color': 'green' }} />
+            <CButton onClick={handleAddProductRow} color="" className="">
+              <CIcon icon={cilPlus} size="m" style={{ '--ci-primary-color': 'green' }} />
             </CButton>
           )}
         </div>

@@ -1,9 +1,9 @@
 import './style.css';
 import { CButton, CCard, CCardBody, CCardHeader, CContainer } from '@coreui/react';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { generatePDF as generateMarathiPDF } from './InvoicePdf';
 import { generatePDF as generateEnglishPDF } from './InvoicePdfEnglish';
-import { getAPICall } from '../../../util/api';
+import { getAPICall, postFormData } from '../../../util/api';
 import { useParams } from 'react-router-dom';
 import { getUserData } from '../../../util/session';
 import { useToast } from '../../common/toast/ToastContext';
@@ -12,6 +12,8 @@ const InvoiceDetails = () => {
   const ci = getUserData()?.company_info;
   const param = useParams();
   const [remainingAmount, setRemainingAmount] = useState(0);
+  const fileInputRef = useRef(null);
+  const [file, setFile] = useState(null);
   const [totalAmountWords, setTotalAmountWords] = useState('');
   const [grandTotal, setGrandTotal] = useState(0);
   const { showToast } = useToast();
@@ -150,6 +152,21 @@ const InvoiceDetails = () => {
     }
   };
   
+  // Trigger file input dialog
+  const handleFileInputClick = () => {
+    handleDownload();
+    fileInputRef.current.click(); // Triggers the file input click
+  };
+ 
+  // Handle file selection
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0]; // Get selected file
+    if (selectedFile) {
+     // handleDownload(); // Download the bill after file selection
+      setFile(selectedFile); // Set selected file to state
+      handleSendWhatsApp(selectedFile); // Immediately send the bill to WhatsApp after file selection
+    }
+  };
 
   const handleDownload = (language) => {
     const invoiceNo = formData.InvoiceNumber;
@@ -327,7 +344,13 @@ const InvoiceDetails = () => {
           <CButton color="primary" variant="outline" onClick={handlePrint} className="d-print-none me-2">Print</CButton>
           <CButton color="success" variant="outline" onClick={() => handleDownload('marathi')} className="d-print-none me-2">Download (Marathi)</CButton>
           <CButton color="success" variant="outline" onClick={() => handleDownload('english')} className="d-print-none me-2">Download (English)</CButton>
-          <CButton color="info" variant="outline" onClick={handleSendWhatsApp} className="d-print-none">Send to WhatsApp</CButton>
+          {/* <CButton color="success" onClick={handleFileInputClick}>Send Bill on WhatsApp</CButton>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
+            /> */}
         </div>
 
           </div>

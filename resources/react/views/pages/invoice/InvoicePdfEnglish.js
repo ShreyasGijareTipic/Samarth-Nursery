@@ -38,7 +38,7 @@ export function generatePDF(grandTotal, invoiceNo, customerName, formData, remai
                     <p style="font-size: 16px;"><strong>Customer Address:</strong> <span style="font-size: 14px;">${formData.customer.address}</span></p>
                     <p style="font-size: 16px;"><strong>Mobile Number:</strong> <span style="font-size: 14px;">${formData.customer.mobile}</span></p>
                 </div>
-                <div style="width: 48%; padding: 10px; background-color: #fff7e6; border: 1px solid #ffcc99;">
+                <div style="width: 48%; padding: 10px; background-color: #e6ffe6; border: 1px solid #e6ffe6;">
                     <p style="font-size: 16px;"><strong>Invoice Number:</strong> <span style="font-size: 14px;">${invoiceNo}</span></p>
                     <p style="font-size: 16px;"><strong>Invoice Date:</strong> <span style="font-size: 14px;">${formData.date.split("-").reverse().join("-")}</span></p>
                     ${

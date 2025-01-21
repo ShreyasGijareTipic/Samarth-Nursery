@@ -32,12 +32,12 @@ export function generatePDF(grandTotal, invoiceNo, customerName, formData, remai
 
             <!-- Customer and Invoice Details -->
             <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-                <div style="width: 48%; padding: 10px; background-color: #f0f8ff; border: 1px solid #add8e6;">
+                <div style="width: 48%; padding: 10px; background-color: #f0f8ff; border: 5px solid #f0f8ff;">
                     <p style="font-size: 16px;"><strong>ग्राहकाचे नाव:</strong> <span style="font-size: 14px;">${formData.customer.name}</span></p>
                     <p style="font-size: 16px;"><strong>ग्राहकाचा पत्ता:</strong> <span style="font-size: 14px;">${formData.customer.address}</span></p>
                     <p style="font-size: 16px;"><strong>मोबाईल क्रमांक:</strong> <span style="font-size: 14px;">${formData.customer.mobile}</span></p>
                 </div>
-                <div style="width: 48%; padding: 10px; background-color: #fff7e6; border: 1px solid #ffcc99;">
+                <div style="width: 48%; padding: 10px; background-color: #e6ffe6; border: 5px solid #e6ffe6;">
                     <p style="font-size: 16px;"><strong>चलन क्रमांक:</strong> <span style="font-size: 14px;">${invoiceNo}</span></p>
                     <p style="font-size: 16px;"><strong>चलन तारीख:</strong> <span style="font-size: 14px;">${formData.date.split("-").reverse().join("-")}</span></p>
                     ${
@@ -96,11 +96,7 @@ export function generatePDF(grandTotal, invoiceNo, customerName, formData, remai
                     <p style="font-size: 14px;"><strong>खाते क्रमांक:</strong> ${ci.account_no}</p>
                     <p style="font-size: 14px;"><strong>IFSC कोड:</strong> ${ci.IFSC_code}</p>
                 </div>
-                <div style="text-align: center; width: 48%;">
-                    <p style="font-size: 16px;"><strong>ई-स्वाक्षरी</strong></p>
-                    <img src="img/${ci.sign}" alt="Signature" style="width: 100px; height: 50px;" />
-                    <p style="font-size: 14px;">अधिकृत स्वाक्षरी</p>
-                </div>
+                <div style="text-align: center; width: 48%;"></div>
             </div>
 
             <hr style="border: 1px solid #ddd; margin: 20px 0;" />
@@ -113,11 +109,20 @@ export function generatePDF(grandTotal, invoiceNo, customerName, formData, remai
     element.innerHTML = invoiceContent;
 
     const options = {
-        margin: [10, 10, 10, 10],
+        margin: [10, 10, 20, 10],
         filename: `${invoiceNo}-${customerName}.pdf`,
         image: { type: "jpeg", quality: 1 },
         html2canvas: { scale: 2 },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        callback: function (pdf) {
+            // Add footer on each page
+            const totalPages = pdf.internal.pages.length;
+            for (let i = 1; i <= totalPages; i++) {
+                pdf.setPage(i);
+                pdf.text(`Page ${i} of ${totalPages}`, 190, 285);  // Page number
+                pdf.text("हे चलन संगणकाद्वारे तयार केले आहे आणि अधिकृत आहे.", 10, 285);  // Footer text
+            }
+        }
     };
 
     html2pdf().set(options).from(element).save();

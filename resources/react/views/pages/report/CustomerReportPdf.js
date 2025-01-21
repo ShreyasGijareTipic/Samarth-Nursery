@@ -1,13 +1,12 @@
 import html2pdf from "html2pdf.js";
-import { getUserData } from '../../../util/session';
-import { marathiFont } from '../../common/font';
+import { getUserData } from "../../../util/session";
 
 const formatDate = (dateString) => {
-    const options = { day: 'numeric', month: 'short', year: 'numeric' };
+    const options = { day: "numeric", month: "short", year: "numeric" };
     const date = new Date(dateString);
-    const formattedDate = date.toLocaleDateString('en-US', options).replace(',', '');
-    
-    const [month, day, year] = formattedDate.split(' ');
+    const formattedDate = date.toLocaleDateString("en-US", options).replace(",", "");
+
+    const [month, day, year] = formattedDate.split(" ");
     return `${day} ${month} ${year}`;
 };
 
@@ -16,37 +15,59 @@ function convertTo12HourFormat(time) {
     const suffix = hours >= 12 ? 'PM' : 'AM';
     hours = hours % 12 || 12;
     return `${hours}:${minutes.toString().padStart(2, '0')} ${suffix}`;
-};
+}
+
+function convertToWords(amount) {
+    const words = [
+        "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
+        "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"
+    ];
+    const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+    if (amount < 20) return words[amount];
+    if (amount < 100) return tens[Math.floor(amount / 10)] + (amount % 10 ? ` ${words[amount % 10]}` : "");
+    if (amount < 1000) return words[Math.floor(amount / 100)] + " Hundred" + (amount % 100 ? ` ${convertToWords(amount % 100)}` : "");
+    return amount.toString();
+}
 
 export function generatePDFReport(grandTotal, state, report, remainingAmount) {
     const ci = getUserData()?.company_info;
 
-    // Create HTML structure for the invoice
+   
+    if (!ci) {
+        console.error("Company information is missing.");
+        return;
+    }
+
+    
     const htmlContent = `
-    <div style="font-family: 'NotoSansDevanagari', sans-serif; font-size: 12px; color: #333;">
-        <div style="display: flex; justify-content: space-between; align-items: center; background-color: #f1f8e9; padding: 10px;">
-            <img src="img/${ci.logo}" alt="Logo" style="width: 50px; height: 50px;">
-            <h2 style="color: #4caf50; font-size: 24px; margin: 0; text-align: right;">${ci.company_name}</h2>
+
+    <div style="margin: 5px 0; background-color: #e8f5e9; padding: 10px; text-align: center; font-size: 16px;">
+            <strong>Order Report</strong>
         </div>
-        
-        <div style="padding: 20px; background-color: #f9f9f9;">
-            <div style="text-align: right; font-size: 14px;">
-                <p style="font-weight: bold; color: #4caf50;">${ci.company_name}</p>
-                <p>${ci.land_mark}, ${ci.Tal}, ${ci.Dist}, ${ci.pincode}</p>
+
+    <div style="font-family: Arial, sans-serif; font-size: 12px; color: #333; padding: 5px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <img src="img/${ci.logo}" alt="Logo" style="width: 150px; height: 150px;">
+            <div style="text-align: right;">
+                <h2 style="color: #4caf50; font-size: 24px; margin: 0;">${ci.company_name}</h2>
+                <p style="margin: 0;">${ci.land_mark}, ${ci.Tal}, ${ci.Dist}, ${ci.pincode}</p>
                 <p>Phone: ${ci.phone_no}</p>
             </div>
-
-            <div style="margin-top: 20px;">
-                <h3 style="font-size: 18px; color: #333;">Invoice to:</h3>
-                <p>Customer Name: ${state.customer?.name || "NA"}</p>
-                <p>Customer Address: ${state.customer?.address || "NA"}</p>
-                <p>Mobile Number: ${state.customer?.mobile || "NA"}</p>
-                <p>Invoice No: NA</p>
-                <p>Start Date: ${formatDate(state.start_date)}</p>
-                <p>End Date: ${formatDate(state.end_date)}</p>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+            <div style="border: 1px solid #ddd; padding: 10px; width: 48%; background-color: #e3f2fd;">
+                <p><strong>Customer Name:</strong> ${state.customer?.name || "NA"}</p>
+                <p><strong>Customer Address:</strong> ${state.customer?.address || "NA"}</p>
+                <p><strong>Mobile Number:</strong> ${state.customer?.mobile || "NA"}</p>
             </div>
-
-            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+            <div style="border: 1px solid #ddd; padding: 10px; width: 48%; background-color: #f1f8e9;">
+                <p><strong>Invoice Type:</strong> ${state.invoice || "NA"} </p>
+                <p><strong>Invoice start Date:</strong> ${state?.start_date}</p>
+                <p><strong>Invoice End Date:</strong> ${state?.end_date}</p>
+            </div>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
                 <thead>
                     <tr style="background-color: #4caf50; color: white; text-align: center;">
                         <th style="padding: 10px; border: 1px solid #ddd;">Sr No</th>
@@ -78,51 +99,57 @@ export function generatePDFReport(grandTotal, state, report, remainingAmount) {
                     }).join('')}
                 </tbody>
             </table>
-
-            <div style="margin-top: 30px; background-color: #f1f8e9; padding: 10px;">
-                <h4 style="color: #4caf50;">Grand Total</h4>
-                <p>Amount Paid: ${(grandTotal - remainingAmount).toFixed(2)} /-</p>
-                <p>Balance Amount: ${remainingAmount.toFixed(2)} /-</p>
+        <div style="padding: 10px; border: 1px solid #ddd; background-color: #f1f8e9; margin-bottom: 20px;">
+            <p><strong>Amount Paid:</strong> ${grandTotal - remainingAmount} /-</p>
+            <p><strong>Remaining Amount:</strong> ${remainingAmount} /-</p>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; margin-top: 20px; border: 1px solid #ddd; padding: 10px; ">
+            <div style="width: 48%;">
+                <p><strong>Bank:</strong> ${ci.bank_name}</p>
+                <p><strong>Account Number:</strong> ${ci.account_no}</p>
+                <p><strong>IFSC Code:</strong> ${ci.IFSC_code}</p>
             </div>
-
-            <div style="margin-top: 20px;">
-                <h4 style="color: #4caf50;">Bank Details</h4>
-                <p>Bank Name: ${ci.bank_name}</p>
-                <p>Account No: ${ci.account_no}</p>
-                <p>IFSC Code: ${ci.IFSC_code}</p>
-            </div>
-
-            <div style="float: right; font-weight: bold; text-align: center; margin-top: 30px;">
-                <p>E-SIGNATURE</p>
-                <img src="img/${ci.sign}" alt="Signature" style="width: 120px; height: 70px;">
+            <div style="width: 48%; text-align: center;">
+                <p><strong>E-Signature</strong></p>
+                <img src="img/${ci.sign}" alt="Signature" style="width: 100px;">
                 <p>Authorized Signature</p>
-            </div>
-
-            <div style="text-align: center; margin-top: 20px; font-size: 10px; color: #999;">
-                <p>This bill has been computer-generated and is authorized.</p>
-            </div>
-
-            <div style="width: 100%; border-top: 1px solid #ccc; padding-top: 10px; text-align: center; font-size: 10px; color: #666;">
-                <p>Page Generated on: ${new Date().toLocaleString()}</p>
             </div>
         </div>
     </div>`;
 
-    // Convert HTML to PDF using html2pdf
-    const element = document.createElement('div');
-    element.innerHTML = htmlContent;
-
-    // Set options for html2pdf
     const options = {
-        margin: [10, 10, 10, 10],
+        margin: [10, 10, 20, 10],
         filename: `${state.customer?.name?.replace(" ", "-")}-${new Date().getTime()}.pdf`,
         html2canvas: { scale: 4 },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        pagebreak: { avoid: "tr" }
     };
 
-    // Generate PDF from HTML
-    html2pdf()
-        .from(element)
-        .set(options)
-        .save();
+    const element = document.createElement("div");
+    element.innerHTML = htmlContent;
+
+    const pdf = html2pdf().from(element).set(options);
+
+    
+    pdf.toPdf().get("pdf").then((pdfDoc) => {
+        const totalPages = pdfDoc.internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+            pdfDoc.setPage(i);
+    
+           
+            pdfDoc.setFontSize(10);
+    
+            const centerText = "This invoice is computer-generated and valid.";
+            const textWidth = pdfDoc.getTextWidth(centerText);
+            const centerX = (pdfDoc.internal.pageSize.getWidth() - textWidth) / 2;
+            pdfDoc.text(centerText, centerX, pdfDoc.internal.pageSize.getHeight() - 10);
+    
+            
+            const pageNumberText = `Page ${i} of ${totalPages}`;
+            pdfDoc.text(pageNumberText, pdfDoc.internal.pageSize.getWidth() - 10, pdfDoc.internal.pageSize.getHeight() - 10, {
+                align: "right"
+            });
+        }
+    }).save();
 }
